@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Embed PowerApps Form{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mt-5">Azure DevOps Work Items</h1>
+    {% if work_items %}
+    <table class="table table-striped table-bordered" style="border-collapse: collapse;">
+        <thead class="table-dark text-center">
+
+            <tr style="height: 30px;"> <!-- Adjust header row height -->
+                <th style="background-color: #007bff; color: white; text-align: center; font-size: 14px;">ID</th> <!-- Blue -->
+                <th style="background-color: #28a745; color: white; text-align: center; font-size: 14px;">Title</th> <!-- Green -->
+                <th style="background-color: #ffc107; color: black; text-align: center; font-size: 14px;">Work Item Type</th> <!-- Yellow -->
+                <th style="background-color: #dc3545; color: white; text-align: center; font-size: 14px;">State</th> <!-- Red -->
+                <th style="background-color: #17a2b8; color: white; text-align: center; font-size: 14px;">Area Path</th> <!-- Teal -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in work_items %}
+            <tr style="height: 20px; font-size: 12px;"> <!-- Adjust table data row height -->
+                <td class="text-center"><a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ item.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"target="_blank">{{ item.id }}</a></td>
+                <td>{{ item.title }}</td>
+                <td class="text-center">{{ item.workitemtype }}</td>
+                <td class="text-center">{{ item.state }}</td>
+                <td class="text-center">{{ item.areapath }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No work items found.</p>
+    {% endif %}
+</div>
+{% endblock %}

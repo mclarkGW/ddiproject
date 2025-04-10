@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}DDI Dashboard{% endblock %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 100%;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 2px;
+        }
+        th {
+            height: 25px;
+            font-size: small;
+            cursor: pointer;
+        }
+        td {
+            font-size: medium;
+        }
+        .epics-table {
+            margin-left: 20px;
+            width: 95%;
+        }
+        .hidden {
+            display: none;
+        }
+        .expand-btn {
+            cursor: pointer;
+
+    </style>
+    <script>
+        let sortOrder = "asc";
+
+        function toggleEpics(initiativeId) {
+            var epicsRow = document.getElementById('epics-' + initiativeId);
+            var expandBtn = document.getElementById('expand-btn-' + initiativeId);
+            if (epicsRow.classList.contains('hidden')) {
+                epicsRow.classList.remove('hidden');
+                expandBtn.innerHTML = '-';
+            } else {
+                epicsRow.classList.add('hidden');
+                expandBtn.innerHTML = '+';
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>DDI Dashboard</h1>
+        <br>
+        <table class="table-striped-columns">
+            <thead class="table-success text-center" style="position: sticky; top: 0; z-index: 1000;">
+                <tr>
+                    <th></th>
+                    <th>Children</th>
+                    <th>ID</th>
+                    <th>Deal</th>
+                    <th>Start</th>
+                    <th>Months</th>
+                    <th>SIT Date</th>
+                    <th>% Cmpl</th>
+                    <th>UAT Date</th>
+                    <th>% Cmpl</th>
+                    <th>Go Live</th>
+                    <th>Cur Phase</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for initiative in initiatives %}
+                <tr>
+                    <td class="expand-btn" id="expand-btn-{{ initiative.id }}" onclick="toggleEpics({{ initiative.id }})">
+                        {% if initiative.epics.all %}
+                            +
+                        {% else %}
+                            &nbsp;
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if initiative.epics.all %}
+                        <span class="badge text-bg-light">{{ initiative.epics.count }}</span>
+                        {% else %}
+                        {% endif %}
+                    </td>
+                    <td class="text-center"><span class="badge text-bg-light">
+                        <a href="https://dev.azure.com/PayerPortfolio/MES%20(Portfolio)/_workitems/edit/{{ initiative.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ initiative.id }}</a>
+                    </span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.title }}</span></td>
+                    <td><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
+                    <td><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
+                    <td><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
+                    <td>{% if initiative.sitcmpl %}
+                        <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.sitcmpl }}%" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.sitcmpl }}%">{{ initiative.sitcmpl }}%</div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge text-bg-light">{{ initiative.uatstart|date:"m/d/y"|default:""  }}</span></td>
+                    <td>{% if initiative.uatcmpl %}
+                        <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.uatcmpl }}%" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.uatcmpl }}%">{{ initiative.uatcmpl }}%</div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge text-bg-light">{{ initiative.golive }}</span></td>
+                    <td><span class="badge text-bg-light">{{ initiative.currentphase }}</span></td>
+                </tr>
+                {% if initiative.epics.all %}
+                <tr id="epics-{{ initiative.id }}" class="hidden">
+                    <td colspan="11">
+                        <table class="epics-table">
+                            <thead style="position: sticky; top: 0; z-index: 1000;">
+                                <tr>
+                                    <th class="table-danger text-center" >Type</th>
+                                    <th class="table-danger text-center" >Dependencies</th>
+                                    <th class="table-danger text-center" >% Done</th>
+                                    <th class="table-danger text-center" >Baseline</th>
+                                    <th class="table-danger text-center" >Req By</th>
+                                    <th class="table-danger text-center" >Plan</th>
+                                    <th class="table-primary text-center" >Status</th>
+                                    <th class="table-primary text-center" >Narrative</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for epic in initiative.epics.all|dictsort:"epiccategory" %}
+                                <tr>
+                                    <td><span class="badge text-bg-light">{{ epic.epiccategory }}</span></td>
+                                    <td class="text-left"><span class="badge text-bg-light">
+                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ epic.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ epic.title }}</a>
+                                    </span>
+                                    </td>
+                                    <td><span class="badge text-bg-light">Script Update</span></td>
+                                    <td><span class="badge text-bg-light">{{ epic.enddate|date:"m/d/y"|default:""  }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ epic.requiredbdate|date:"m/d/y"|default:""  }}</span></td>
+                                    <td><span class="badge text-bg-light">Script Update</span></td>
+                                    <td class="text-center">
+                                        <span class="badge
+                                        {% if epic.statuschoice == 'At Risk' %}text-bg-danger
+                                        {% elif epic.statuschoice == 'Complete' %}text-bg-primary
+                                        {% elif epic.statuschoice == 'Issue' %}text-bg-warning
+                                        {% elif epic.statuschoice == 'Not Started' %}text-bg-light
+                                        {% elif epic.statuschoice == 'On Hold' %}text-bg-info
+                                        {% elif epic.statuschoice == 'On Track' %}text-bg-success
+                                        {% else %}text-bg-light
+                                        {% endif %}
+                                        ">{{ epic.statuschoice }}</span>
+                                    </td>
+                                    <td><span class="badge rounded-pill text-bg-light">{{ epic.statustextbox|strip_html }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="container" style="text-align: center; padding: 10px;">
+            <span class="badge text-bg-primary">Last Refreshed: </span>
+            <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ last_refreshed.title }} EST</span>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+{% endblock %}

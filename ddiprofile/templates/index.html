@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - DDI Management{% endblock %}
+
+{% block content %}
+    <h1>Welcome to DDI Management</h1>
+    <p>Manage your DDI Profiles and Statuses with ease.</p>
+
+    <b>Select DDI Profile here.....</b>
+    <br>
+    <a href="{% url 'ddi_profile_list' %}" class="btn btn-primary">View DDI Profiles</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">Dashboard</a>
+
+
+{% endblock %}

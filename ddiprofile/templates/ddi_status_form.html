@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ form.instance.pk|yesno:"Edit DDI Status,Create DDI Status" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">{{ form.instance.pk|yesno:"Edit DDI Status,Create DDI Status" }}</h1>
+
+    <!-- Form to edit or create the DDI Status -->
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <input type="hidden" name="previous_url" value="{{ previous_url }}">
+        <table class="table">
+            {% for field in form %}
+                {% if field.name != 'remarks' %}
+                    <tr>
+                        <td>{{ field.label_tag }}</td>
+                        <td>{{ field }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+        <div class="d-flex">
+            <button type="submit" class="btn btn-success btn-sm me-2" style="width: 100px;">
+                <i class="bi bi-check-circle"></i> Save
+            </button>
+            <a href="{{ previous_url }}" class="btn btn-secondary btn-sm" style="width: 100px;">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

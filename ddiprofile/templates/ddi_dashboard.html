@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}DDI Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mt-4">DDI Profiles</h2>
+    <br>
+
+{% if work_items %}
+    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-striped table-hover table-bordered" style="border-collapse: separate;">
+            <thead class="table-success text-center" style="position: sticky; top: 0; z-index: 1000;">
+                <tr style="height: 25px; font-size: 12px;">
+                    <th>ID</th>
+                    <th>Deal</th>
+                    <th>Start</th>
+                    <th>Months</th>
+                    <th>SIT Date</th>
+                    <th>SIT % Cmpl</th>
+                    <th>UAT Date</th>
+                    <th>UAT % Cmpl</th>
+                    <th>Go Live</th>
+                    <th>Cur Phase</th>
+                    <th>Child Epics</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in work_items %}
+                <tr style="height: 15px; font-size: 10px;">
+                    <td class="text-center">
+                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ item.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ item.id }}</a>
+                    </td>
+                    <td>{{ item.title }}</td>
+                    <td class="text-center">{{ item.start }}</td>
+                    <td class="text-center">{{ item.months }}</td>
+                    <td class="text-center">{{ item.sitstart }}</td>
+                    <td class="text-center">
+                        {% if item.sitcmpl %}
+                        <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ item.sitcmpl }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ item.sitcmpl }}%">{{ item.sitcmpl }}%</div>
+                        </div>
+                        {% else %}
+                        No Data
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ item.uatstart }}</td>
+                    <td class="text-center">
+                        {% if item.uatcmpl %}
+                        <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ item.uatcmpl }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ item.uatcmpl }}%">{{ item.uatcmpl }}%</div>
+                        </div>
+                        {% else %}
+                        No Data
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ item.golivedate }}</td>
+                    <td class="text-center">{{ item.currentphase }}</td>
+                    <td>
+                        {% if item.epics %}
+                            <ul>
+                                {% for epic in item.epics %}
+                                    <li>
+                                        <strong>{{ epic.title }}</strong> ({{ epic.state }})
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            No Epics
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <br>
+    <p><em>!! No Work Items Found !!</em></p>
+    {% endif %}
+</div>
+{% endblock %}

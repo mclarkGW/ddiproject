@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DDI Statuses</title>
+</head>
+<body>
+<h1>DDI Statuses</h1>
+
+<!-- Loop through statuses and display them -->
+<ul>
+    {% for status in statuses %}
+        <li>{{ status.name }} - {{ status.current_phase.name }} - {{ status.date }} - <a href="{% url 'ddi_status_update' status.pk %}">Edit</a></li>
+    {% endfor %}
+</ul>
+
+<!-- Link to create a new DDI Status -->
+<br>
+<a href="{% url 'ddi_status_create' %}">Create New DDI Status</a>
+<br>
+<br>
+<a href="{% url 'index' %}">Back to Home</a>
+</body>
+</html>
