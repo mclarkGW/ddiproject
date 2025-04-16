@@ -73,18 +73,22 @@
         <table class="table-striped-columns">
             <thead class="table-success text-center" style="position: sticky; top: 0; z-index: 1000;">
                 <tr>
-                    <th></th>
-                    <th>Children</th>
-                    <th>ID</th>
-                    <th>Deal</th>
-                    <th>Start</th>
-                    <th>Months</th>
-                    <th>SIT Date</th>
-                    <th>% Cmpl</th>
-                    <th>UAT Date</th>
-                    <th>% Cmpl</th>
-                    <th>Go Live</th>
-                    <th>Cur Phase</th>
+                    <th rowspan="2"></th>
+                    <th rowspan="2">Children</th>
+                    <th rowspan="2">ID</th>
+                    <th rowspan="2">Deal</th>
+                    <th rowspan="2">Start</th>
+                    <th rowspan="2">Months</th>
+                    <th colspan="2" class="sub-header">SIT</th>
+                    <th colspan="2" class="sub-header">UAT</th>
+                    <th rowspan="2">Go Live</th>
+                    <th rowspan="2">Cur Phase</th>
+                </tr>
+                <tr>
+                    <th class="table-primary text-center">Start</th>
+                    <th class="table-primary text-center">% Cmpl</th>
+                    <th class="table-primary text-center">Start</th>
+                    <th class="table-primary text-center">% Cmpl</th>
                 </tr>
             </thead>
             <tbody>
@@ -128,7 +132,7 @@
                 </tr>
                 {% if initiative.epics.all %}
                 <tr id="epics-{{ initiative.id }}" class="hidden">
-                    <td colspan="11">
+                    <td colspan="12">
                         <table class="epics-table">
                             <thead style="position: sticky; top: 0; z-index: 1000;">
                                 <tr>

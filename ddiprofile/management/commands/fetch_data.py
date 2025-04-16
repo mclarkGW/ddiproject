@@ -18,6 +18,8 @@ class Command(BaseCommand):
         pat = 'CByqSGDnGCIxr6qgEBSdxWspYW2Yuuvgq5cdqdlliShNDKYtOnE3JQQJ99BCACAAAAA85jZPAAASAZDO474U'
         url_initiatives = f'https://dev.azure.com/{organization}/{project_initiatives}/_apis/wit/wiql?api-version=7.0'
         url_epics = f'https://dev.azure.com/{organization}/{project_epics}/_apis/wit/wiql?api-version=7.0'
+        # ADO Id of the Parent Play to Initiative |Customer Value: 2584481
+        playid = '2584481'
 
         auth_header = base64.b64encode(f":{pat}".encode()).decode()
         headers = {
@@ -31,6 +33,8 @@ class Command(BaseCommand):
             FROM WorkItems
             WHERE
                 [System.WorkItemType] = 'Initiative'
+                AND [System.Parent] = {playid}
+                AND [Custom.ddi_DashboardInclude] = 'YES'
             ORDER BY [System.Title] ASC
             """
         }
