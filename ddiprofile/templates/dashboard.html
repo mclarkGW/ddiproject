@@ -127,7 +127,7 @@
                         </div>
                         {% endif %}
                     </td>
-                    <td><span class="badge text-bg-light">{{ initiative.golive }}</span></td>
+                    <td><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
                     <td><span class="badge text-bg-light">{{ initiative.currentphase }}</span></td>
                 </tr>
                 {% if initiative.epics.all %}
