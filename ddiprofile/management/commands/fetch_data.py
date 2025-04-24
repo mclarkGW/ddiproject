@@ -1,7 +1,9 @@
 import base64
+import os
 import requests
 from django.core.management.base import BaseCommand
 from datetime import datetime
+from django.db import transaction
 from ddiprofile.models import Initiative, Epic, LastRefreshed  # Adjust according to your app structure
 
 class Command(BaseCommand):
@@ -97,21 +99,14 @@ class Command(BaseCommand):
                     if epic_work_item_ids:
                         epics = fetch_work_item_details(organization, project_epics, pat, epic_work_item_ids)
 
-                        # Log all fetched Epic Categories for debugging
-                        #print("Fetched Epic Categories:", [epic.get('epiccategory', '') for epic in epics])
-
                         # Normalize and filter epics to only include 'CR' or 'GAP'
                         epics = [
                             epic for epic in epics
                             if epic.get('epiccategory', '').strip().upper() in ['CR', 'GAP']
                         ]
 
-                        # Debugging: Log filtered Epic Categories
-                        #print("Filtered Epic Categories:", [epic.get('epiccategory') for epic in epics])
-
-
                         for epic_data in epics:
-                            # Debugging: Log epiccategory before saving
+                            # Debugging: Log Epic Details before saving
                             print(f"Saving Epic: {epic_data.get('title')} | Work Item ID: {epic_data.get('id')} | Epic Category: {epic_data.get('epiccategory')}")
 
                             # Parse dates
@@ -140,6 +135,8 @@ class Command(BaseCommand):
                                 defaults=defaults
                             )
 
+                            # --Add Code to Fetch and Save Epic Children-- Line 136 in CR Fetch_data.py
+
         except requests.exceptions.RequestException as e:
             print(f"Error fetching data from Azure DevOps: {e}")
 
@@ -151,9 +148,11 @@ class Command(BaseCommand):
                 'title': now.strftime("%Y-%m-%d %H:%M:%S")
             }
         )
+        # Retrieve the updated title from the model and log it
+        last_refreshed = LastRefreshed.objects.get(id=1)
+        self.stdout.write(f'Updated LastRefreshed model: {last_refreshed.title} EST')
 
-        print('Updated LastRefreshed model')
-
+# Function to parse date strings into datetime.date objects
 def parse_date(date_str):
     if isinstance(date_str, datetime):
         return date_str.date()
@@ -233,3 +232,5 @@ def fetch_work_item_details(organization, project, pat, work_item_ids):
                 })
 
     return work_items
+
+# -- Add Code to Fetch and Save Epic Children-- Line 258 in CR Fetch_data.py
