@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Initiative,Epic,LastRefreshed
+from .models import Initiative,ChangeRequest,LastRefreshed
 from datetime import datetime
 import requests
 import base64
@@ -12,7 +12,7 @@ def index(request):
 
 # DDI Dashboard View
 def dashboard_view(request):
-    initiatives = Initiative.objects.all().prefetch_related('epics').order_by('title')  # Sort Initiatives by title
+    initiatives = Initiative.objects.all().prefetch_related('change_requests').order_by('title')  # Sort Initiatives by title
     last_refreshed = LastRefreshed.objects.first()
 
     context = {

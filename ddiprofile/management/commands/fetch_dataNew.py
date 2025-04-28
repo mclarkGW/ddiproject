@@ -84,52 +84,66 @@ class Command(BaseCommand):
                         defaults=defaults
                     )
 
-                    epic_query_payload = {
+                    cr_query_payload = {
                         "query": f"""
                         SELECT [System.Id]
                         FROM WorkItems
                         WHERE
                             [System.WorkItemType] = 'Change Request'
-                            AND [Custom.ClientAccounts] = {initiative_data.get('clientaccounts')}
-                            AND [Custom.SolutionGotoMarket] = {initiative_data.get('solutiongotomarket')}
+                            AND [System.State] NOT IN ('Cancelled','Duplicate','Obsolete')
+                            AND [Custom.CID] NOT IN ('','NA','N/A')
                             AND [System.AreaPath] UNDER 'USHC_AMER_US_ADU_HSP_Ua3\\ART - Client'
                         ORDER BY [System.Title] ASC
                         """
                     }
 
-                    epic_response = requests.post(url_epics, headers=headers, json=epic_query_payload)
-                    epic_response.raise_for_status()  # Raise an exception for HTTP errors
-                    epic_work_item_ids = [str(item['id']) for item in epic_response.json().get('workItems', [])]
+                    cr_response = requests.post(url_epics, headers=headers, json=cr_query_payload)
+                    cr_response.raise_for_status()  # Raise an exception for HTTP errors
+                    cr_work_item_ids = [str(item['id']) for item in cr_response.json().get('workItems', [])]
 
-                    if epic_work_item_ids:
-                        epics = fetch_work_item_details(organization, project_epics, pat, epic_work_item_ids)
+                    if cr_work_item_ids:
+                        changerequest = fetch_work_item_details(organization, project_epics, pat, cr_work_item_ids)
 
-                        # Normalize and filter epics to only include 'CR' or 'GAP'
-                        epics = [
-                            epic for epic in epics
-                            if epic.get('epiccategory', '').strip().upper() in ['CR', 'GAP']
+                    if cr_work_item_ids:
+                        changerequests = fetch_work_item_details(organization, project_epics, pat, cr_work_item_ids)
+
+                        # Normalize and filter Change Requests based on ClientAccounts
+                        changerequests = [
+                            changerequest for changerequest in changerequests
+                            if changerequest.get('clientaccounts', '').strip().upper() in {initiative_data.get('clientaccounts', '').strip().upper()} 
+                            and changerequest.get('solutiongotomarket', '').strip().upper() in {initiative_data.get('solutiongotomarket', '').strip().upper()}
                         ]
 
-                        for epic_data in epics:
-                            # Debugging: Log Epic Details before saving
-                            print(f"Saving Epic: {epic_data.get('title')} | Work Item ID: {epic_data.get('id')} | Epic Category: {epic_data.get('epiccategory')}")
+                        for changerequest_data in changerequests:
+                            # Debugging: Log ChangeRequest Details before saving
+                            print(f"Saving Change Request: {changerequest_data.get('title')} | Work Item ID: {changerequest_data.get('id')}")
 
                             # Parse dates
-                            parsed_created_date = parse_date(epic_data.get('created_date'))
+                            parsed_targetdate = parse_date(changerequest_data.get('targetdate'))
 
-                            # Update or create Epic
+                            # Update or create ChangeRequest
                             defaults = {
-                                'title': epic_data.get('title'),
-                                'workitemtype': epic_data.get('workitemtype'),
-                                'state': epic_data.get('state') or 'Unknown',
-                                'areapath': epic_data.get('areapath'),
-                                'iterationpath': epic_data.get('iterationpath'),
-                                'created_date': parsed_created_date,
+                                'title': changerequest_data.get('title'),
+                                'workitemtype': changerequest_data.get('workitemtype'),
+                                'state': changerequest_data.get('state') or 'Unknown',
+                                'areapath': changerequest_data.get('areapath'),
+                                'iterationpath': changerequest_data.get('iterationpath'),
+                                'clientaccounts': changerequest_data.get('clientaccounts'),
+                                'solutiongotomarket': changerequest_data.get('solutiongotomarket'),
+                                'targetdate': parsed_targetdate,
+                                'highlevelestimate': changerequest_data.get('highlevelestimate'),
+                                'tt_initiative': changerequest_data.get('tt_initiative'),
+                                'tt_workdescription': changerequest_data.get('tt_workdescription'),
+                                'tt_workcategory': changerequest_data.get('tt_workcategory'),
+                                'tt_capwbs': changerequest_data.get('tt_capwbs'),
+                                'tt_expwbs': changerequest_data.get('tt_expwbs'),
+                                'tt_onshorewbs': changerequest_data.get('tt_onshorewbs'),
+                                'tt_offshorewbs': changerequest_data.get('tt_offshorewbs'),
                                 'initiative': initiative,
                             }
 
-                            Epic.objects.update_or_create(
-                                id=epic_data.get('id'),
+                            ChangeRequest.objects.update_or_create(
+                                id=changerequest_data.get('id'),
                                 defaults=defaults
                             )
 
@@ -229,6 +243,15 @@ def fetch_work_item_details(organization, project, pat, work_item_ids):
                     'iterationpath': fields.get('System.IterationPath', '') if 'fields' in item else '',
                     'clientaccounts': fields.get('Custom.ClientAccounts', '') if 'fields' in item else '',
                     'solutiongotomarket': fields.get('Custom.SolutionGotoMarket', '') if 'fields' in item else '',
+                    'targetdate': fields.get('Microsoft.VSTS.Scheduling.TargetDate', '') if 'fields' in item else '',
+                    'highlevelestimate': fields.get('Custom.HighLevelEstimate', '') if 'fields' in item else '',
+                    'tt_initiative': fields.get('Custom.TT_Initiative', '') if 'fields' in item else '',
+                    'tt_workcategory': fields.get('Custom.TT_WorkCategory', '') if 'fields' in item else '',
+                    'tt_workdescription': fields.get('Custom.CID', '') if 'fields' in item else '',
+                    'tt_capwbs': fields.get('Custom.TT_CAPWBS', '') if 'fields' in item else '',
+                    'tt_expwbs': fields.get('Custom.TT_EXPWBS', '') if 'fields' in item else '',
+                    'tt_onshorewbs': fields.get('Custom.TT_OnShoreWBS', '') if 'fields' in item else '',
+                    'tt_offshorewbs': fields.get('Custom.TT_OffShoreWBS', '') if 'fields' in item else '',
                 })
 
     return work_items

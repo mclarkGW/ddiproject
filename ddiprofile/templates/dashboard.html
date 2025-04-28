@@ -15,7 +15,6 @@
         }
         .container {
             width: 100%;
-            margin: 0 auto;
         }
         h1 {
             text-align: center;
@@ -29,25 +28,30 @@
             border: 1px solid black;
         }
         th, td {
-            padding: 2px;
+            padding: 4px;
         }
         th {
-            height: 25px;
+            height: 30px;
             font-size: small;
             cursor: pointer;
         }
         td {
             font-size: medium;
         }
-        .epics-table {
+        .initatives-table {
             margin-left: 20px;
-            width: 95%;
+            width: 100%;
+        }
+        .changerequests-table {
+            margin-left: 10px;
+            width: 100%;
         }
         .hidden {
             display: none;
         }
         .expand-btn {
             cursor: pointer;
+        }
 
     </style>
     <script>
@@ -70,13 +74,15 @@
     <div class="container">
         <h1>DDI Dashboard</h1>
         <br>
-        <table class="table-striped-columns">
+        <table class="initaitives-table">
             <thead class="table-success text-center" style="position: sticky; top: 0; z-index: 1000;">
                 <tr>
                     <th rowspan="2"></th>
-                    <th rowspan="2">Children</th>
+                    <th rowspan="2">CRs</th>
                     <th rowspan="2">ID</th>
                     <th rowspan="2">Deal</th>
+                    <th rowspan="2">Client Account</th>
+                    <th rowspan="2">Solution GTM</th>
                     <th rowspan="2">Start</th>
                     <th rowspan="2">Months</th>
                     <th colspan="2" class="sub-header">SIT</th>
@@ -95,15 +101,15 @@
                 {% for initiative in initiatives %}
                 <tr>
                     <td class="expand-btn" id="expand-btn-{{ initiative.id }}" onclick="toggleEpics({{ initiative.id }})">
-                        {% if initiative.epics.all %}
+                        {% if initiative.change_requests.all %}
                             +
                         {% else %}
                             &nbsp;
                         {% endif %}
                     </td>
                     <td class="text-center">
-                        {% if initiative.epics.all %}
-                        <span class="badge text-bg-light">{{ initiative.epics.count }}</span>
+                        {% if initiative.change_requests.all %}
+                        <span class="badge text-bg-light">{{ initiative.change_requests.count }}</span>
                         {% else %}
                         {% endif %}
                     </td>
@@ -111,6 +117,8 @@
                         <a href="https://dev.azure.com/PayerPortfolio/MES%20(Portfolio)/_workitems/edit/{{ initiative.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ initiative.id }}</a>
                     </span></td>
                     <td class="text-left"><span class="badge text-bg-light">{{ initiative.title }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.clientaccounts }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.solutiongotomarket }}</span></td>
                     <td><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
                     <td><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
                     <td><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
@@ -130,47 +138,55 @@
                     <td><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
                     <td><span class="badge text-bg-light">{{ initiative.currentphase }}</span></td>
                 </tr>
-                {% if initiative.epics.all %}
+                {% if initiative.change_requests.all %}
                 <tr id="epics-{{ initiative.id }}" class="hidden">
-                    <td colspan="12">
-                        <table class="epics-table">
+                    <td colspan="14">
+                        <table class="changerequests-table">
                             <thead style="position: sticky; top: 0; z-index: 1000;">
                                 <tr>
+                                    <th class="table-danger text-center" >ID</th>
                                     <th class="table-danger text-center" >Type</th>
-                                    <th class="table-danger text-center" >Dependencies</th>
-                                    <th class="table-danger text-center" >% Done</th>
-                                    <th class="table-danger text-center" >Baseline</th>
-                                    <th class="table-danger text-center" >Req By</th>
-                                    <th class="table-danger text-center" >Plan</th>
-                                    <th class="table-primary text-center" >Status</th>
-                                    <th class="table-primary text-center" >Narrative</th>
+                                    <th class="table-danger text-center" >Title</th>
+                                    <th class="table-danger text-center" >State</th>
+                                    <th class="table-danger text-center" >Client Account</th>
+                                    <th class="table-danger text-center" >Solution GTM</th>
+                                    <th class="table-danger text-center" >Target Date</th>
+                                    <th class="table-danger text-center" >HL Estimate</th>
+                                    <th class="table-primary text-center" >Work Description</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for epic in initiative.epics.all|dictsort:"epiccategory" %}
+                                {% for change_request in initiative.change_requests.all|dictsort:"tt_workdescription" %}
                                 <tr>
-                                    <td><span class="badge text-bg-light">{{ epic.epiccategory }}</span></td>
                                     <td class="text-left"><span class="badge text-bg-light">
-                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ epic.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ epic.title }}</a>
+                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ change_request.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ change_request.id }}</a>
                                     </span>
                                     </td>
-                                    <td><span class="badge text-bg-light">Script Update</span></td>
-                                    <td><span class="badge text-bg-light">{{ epic.enddate|date:"m/d/y"|default:""  }}</span></td>
-                                    <td><span class="badge text-bg-light">{{ epic.requiredbdate|date:"m/d/y"|default:""  }}</span></td>
-                                    <td><span class="badge text-bg-light">Script Update</span></td>
                                     <td class="text-center">
                                         <span class="badge
-                                        {% if epic.statuschoice == 'At Risk' %}text-bg-danger
-                                        {% elif epic.statuschoice == 'Complete' %}text-bg-primary
-                                        {% elif epic.statuschoice == 'Issue' %}text-bg-warning
-                                        {% elif epic.statuschoice == 'Not Started' %}text-bg-light
-                                        {% elif epic.statuschoice == 'On Hold' %}text-bg-info
-                                        {% elif epic.statuschoice == 'On Track' %}text-bg-success
+                                        {% if change_request.workitemtype == 'Change Request' %}text-bg-danger
+                                        {% elif change_request.workitemtype == 'GAP' %}text-bg-primary
                                         {% else %}text-bg-light
                                         {% endif %}
-                                        ">{{ epic.statuschoice }}</span>
+                                        ">{{ change_request.workitemtype }}</span>
+                                    <td><span class="badge text-bg-light">{{ change_request.title }}</span></td>
+                                    <td class="text-center">
+                                        <span class="badge
+                                        {% if change_request.state == 'Funnel' %}text-bg-danger
+                                        {% elif change_request.state == 'Done' %}text-bg-primary
+                                        {% elif change_request.state == 'In Progress' %}text-bg-warning
+                                        {% elif change_request.state == 'Reviewing' %}text-bg-light
+                                        {% elif change_request.state == 'Analyzing' %}text-bg-info
+                                        {% elif change_request.state == 'Committed' %}text-bg-success
+                                        {% else %}text-bg-light
+                                        {% endif %}
+                                        ">{{ change_request.state }}</span>
                                     </td>
-                                    <td><span class="badge rounded-pill text-bg-light">{{ epic.statustextbox|strip_html }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ change_request.clientaccounts}}</span></td>
+                                    <td><span class="badge text-bg-light">{{ change_request.solutiongotomarket}}</span></td>
+                                    <td><span class="badge text-bg-light">{{ change_request.targetdate|date:"m/d/y"|default:""  }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ change_request.highlevelestimate}}</span></td>
+                                    <td><span class="badge text-bg-light">{{ change_request.tt_workdescription}}</span></td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
