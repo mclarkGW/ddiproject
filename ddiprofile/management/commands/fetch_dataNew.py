@@ -89,10 +89,12 @@ class Command(BaseCommand):
                         SELECT [System.Id]
                         FROM WorkItems
                         WHERE
-                            [System.WorkItemType] = 'Change Request'
+                            [System.WorkItemType] IN ('Change Request', 'GAP')
                             AND [System.State] NOT IN ('Cancelled','Duplicate','Obsolete')
                             AND [Custom.CID] NOT IN ('','NA','N/A')
                             AND [System.AreaPath] UNDER 'USHC_AMER_US_ADU_HSP_Ua3\\ART - Client'
+                            AND [Custom.ClientAccounts] = '{initiative_data.get('clientaccounts', '').strip().upper()}'
+                            AND [Custom.SolutionGotoMarket] = '{initiative_data.get('solutiongotomarket', '').strip().upper()}'
                         ORDER BY [System.Title] ASC
                         """
                     }
@@ -104,19 +106,19 @@ class Command(BaseCommand):
                     if cr_work_item_ids:
                         changerequest = fetch_work_item_details(organization, project_epics, pat, cr_work_item_ids)
 
-                    if cr_work_item_ids:
-                        changerequests = fetch_work_item_details(organization, project_epics, pat, cr_work_item_ids)
+                    #if cr_work_item_ids:
+                    #    changerequests = fetch_work_item_details(organization, project_epics, pat, cr_work_item_ids)
 
                         # Normalize and filter Change Requests based on ClientAccounts
-                        changerequests = [
-                            changerequest for changerequest in changerequests
-                            if changerequest.get('clientaccounts', '').strip().upper() in {initiative_data.get('clientaccounts', '').strip().upper()} 
-                            and changerequest.get('solutiongotomarket', '').strip().upper() in {initiative_data.get('solutiongotomarket', '').strip().upper()}
-                        ]
+                    #    changerequests = [
+                    #        changerequest for changerequest in changerequests
+                    #        if changerequest.get('clientaccounts', '').strip().upper() in {initiative_data.get('clientaccounts', '').strip().upper()} 
+                    #        and changerequest.get('solutiongotomarket', '').strip().upper() in {initiative_data.get('solutiongotomarket', '').strip().upper()}
+                    #    ]
 
-                        for changerequest_data in changerequests:
+                        for changerequest_data in changerequest:
                             # Debugging: Log ChangeRequest Details before saving
-                            print(f"Saving Change Request: {changerequest_data.get('title')} | Work Item ID: {changerequest_data.get('id')}")
+                            print(f"Saving {changerequest_data.get('workitemtype')}: {changerequest_data.get('title')} | Work Item ID: {changerequest_data.get('id')}")
 
                             # Parse dates
                             parsed_targetdate = parse_date(changerequest_data.get('targetdate'))
@@ -142,12 +144,102 @@ class Command(BaseCommand):
                                 'initiative': initiative,
                             }
 
-                            ChangeRequest.objects.update_or_create(
+                            change_request_instance, created = ChangeRequest.objects.update_or_create(
                                 id=changerequest_data.get('id'),
                                 defaults=defaults
                             )
+                            # Query to fetch features related to the ChangeRequest/GAP
+                            afeature_query_payload = {
+                                "query": f"""
+                                SELECT [System.Id]
+                                FROM WorkItems
+                                WHERE
+                                    [System.WorkItemType] = 'Feature'
+                                    AND [System.State] NOT IN ('Cancelled','Duplicate','Obsolete')
+                                    AND [System.AreaPath] NOT UNDER 'USHC_AMER_US_ADU_HSP_Ua3\\Team Archive - [DO NOT USE]'
+                                    AND [Custom.CID] = '{changerequest_data.get('tt_workdescription', '').strip().upper()}'
+                                ORDER BY [System.Title] ASC
+                                """
+                            }
 
-                            # --Add Code to Fetch and Save Epic Children-- Line 136 in CR Fetch_data.py
+                            afeature_response = requests.post(url_epics, headers=headers, json=afeature_query_payload)
+                            afeature_response.raise_for_status()  # Raise an exception for HTTP errors
+                            afeature_work_item_ids = [str(item['id']) for item in afeature_response.json().get('workItems', [])]
+
+                            if afeature_work_item_ids:
+                                feature = fetch_work_item_details(organization, project_epics, pat, afeature_work_item_ids)
+
+                            #if afeature_work_item_ids:
+                            #    features = fetch_work_item_details(organization, project_epics, pat, afeature_work_item_ids)
+
+                                # Normalize and filter feature
+                            #    features = [
+                            #        feature for feature in features
+                            #        if feature.get('tt_workdescription', '').strip().upper() in {changerequest_data.get('tt_workdescription', '').strip().upper()}
+                            #    ]
+
+                                # if using the filter above add a 's' to feature
+                                for feature_data in feature:
+                                    # Debugging: Log Feature Details before saving
+                                    print(f"Saving Feature: {feature_data.get('title')} | Work Item ID: {feature_data.get('id')}")
+
+                                    # Parse dates
+                                    parsed_targetdate = parse_date(feature_data.get('targetdate'))
+                                    parsed_startdate = parse_date(feature_data.get('startdate'))
+
+                                    # Update or create Feature
+                                    defaults = {
+                                        'title': feature_data.get('title'),
+                                        'workitemtype': feature_data.get('workitemtype'),
+                                        'state': feature_data.get('state') or 'Unknown',
+                                        'areapath': feature_data.get('areapath'),
+                                        'iterationpath': feature_data.get('iterationpath'),
+                                        'clientaccounts':feature_data.get('clientaccounts'),
+                                        'solutiongotomarket': feature_data.get('solutiongotomarket'),
+                                        'targetdate': parsed_targetdate,
+                                        'startdate': parsed_startdate,
+                                        'highlevelestimate': feature_data.get('highlevelestimate'),
+                                        'tt_initiative': feature_data.get('tt_initiative'),
+                                        'tt_workdescription': feature_data.get('tt_workdescription'),
+                                        'tt_workcategory': feature_data.get('tt_workcategory'),
+                                        'tt_capwbs': feature_data.get('tt_capwbs'),
+                                        'tt_expwbs': feature_data.get('tt_expwbs'),
+                                        'tt_onshorewbs': feature_data.get('tt_onshorewbs'),
+                                        'tt_offshorewbs': feature_data.get('tt_offshorewbs'),
+                                        'cr_related': change_request_instance,
+                                    }
+
+                                    feature_instance, created = Feature.objects.update_or_create(
+                                        id=feature_data.get('id'),
+                                        defaults=defaults
+                                    )
+
+                                    # Fetch User Story children for the Feature
+                                    user_stories = fetch_user_story_children(organization, project_epics, pat,[feature_instance.id])
+                                    if user_stories:
+                                        for user_story_data in user_stories:
+                                            # Save each User Story
+                                            print(f"  Saving User Story: {user_story_data.get('id')} | {user_story_data.get('title')}")
+                                            UserStory.objects.update_or_create(
+                                                id=user_story_data.get('id'),
+                                                defaults={
+                                                    'title': user_story_data.get('title'),
+                                                    'workitemtype': user_story_data.get('workitemtype'),
+                                                    'state': user_story_data.get('state'),
+                                                    'iterationpath': user_story_data.get('iterationpath'),
+                                                    'areapath': user_story_data.get('areapath'),
+                                                    'storypoints': user_story_data.get('storypoints'),
+                                                    'clientaccounts': user_story_data.get('clientaccounts'),
+                                                    'tt_initiative': user_story_data.get('tt_initiative'),
+                                                    'tt_workcategory': user_story_data.get('tt_workcategory'),
+                                                    'tt_workdescription': user_story_data.get('tt_workdescription'),
+                                                    'tt_capwbs': user_story_data.get('tt_capwbs'),
+                                                    'tt_expwbs': user_story_data.get('tt_expwbs'),
+                                                    'tt_onshorewbs': user_story_data.get('tt_onshorewbs'),
+                                                    'tt_offshorewbs': user_story_data.get('tt_offshorewbs'),
+                                                    'feature_related': feature_instance
+                                                }
+                                            )
 
         except requests.exceptions.RequestException as e:
             print(f"Error fetching data from Azure DevOps: {e}")
@@ -244,6 +336,7 @@ def fetch_work_item_details(organization, project, pat, work_item_ids):
                     'clientaccounts': fields.get('Custom.ClientAccounts', '') if 'fields' in item else '',
                     'solutiongotomarket': fields.get('Custom.SolutionGotoMarket', '') if 'fields' in item else '',
                     'targetdate': fields.get('Microsoft.VSTS.Scheduling.TargetDate', '') if 'fields' in item else '',
+                    'startdate': fields.get('Microsoft.VSTS.Scheduling.StartDate', '') if 'fields' in item else '',
                     'highlevelestimate': fields.get('Custom.HighLevelEstimate', '') if 'fields' in item else '',
                     'tt_initiative': fields.get('Custom.TT_Initiative', '') if 'fields' in item else '',
                     'tt_workcategory': fields.get('Custom.TT_WorkCategory', '') if 'fields' in item else '',
@@ -252,8 +345,44 @@ def fetch_work_item_details(organization, project, pat, work_item_ids):
                     'tt_expwbs': fields.get('Custom.TT_EXPWBS', '') if 'fields' in item else '',
                     'tt_onshorewbs': fields.get('Custom.TT_OnShoreWBS', '') if 'fields' in item else '',
                     'tt_offshorewbs': fields.get('Custom.TT_OffShoreWBS', '') if 'fields' in item else '',
+                    'storypoints': fields.get('Microsoft.VSTS.Scheduling.StoryPoints', '') if 'fields' in item else '',
                 })
 
     return work_items
 
-# -- Add Code to Fetch and Save Epic Children-- Line 258 in CR Fetch_data.py
+# NEW FUNCTION: Fetch only User Story children for a Feature
+def fetch_user_story_children(organization, project, pat, feature_ids):
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Basic {base64.b64encode(f":{pat}".encode()).decode()}'
+    }
+    user_story_ids = []
+    batch_size = 100  # Adjust batch size as needed
+
+    for i in range(0, len(feature_ids), batch_size):
+        batch_ids = feature_ids[i:i + batch_size]
+        ids_string = ','.join(map(str, batch_ids))  # Convert integers to strings
+        detail_url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems?ids={ids_string}&$expand=relations&api-version=7.0'
+        response = requests.get(detail_url, headers=headers)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        if response.status_code == 200:
+            detail_data = response.json()
+            for item in detail_data.get('value', []):
+                # Check for "Child" relations
+                relations = item.get('relations', [])
+                for relation in relations:
+                    if relation.get('rel') == 'System.LinkTypes.Hierarchy-Forward':  # "Child" link type
+                        child_url = relation.get('url')
+                        child_id = child_url.split('/')[-1]  # Extract the work item ID from the URL
+                        user_story_ids.append(child_id)
+
+    # Fetch details for all children and filter for User Stories
+    user_stories = []
+    if user_story_ids:
+        user_story_details = fetch_work_item_details(organization, project, pat, user_story_ids)
+        for child_data in user_story_details:
+            if child_data.get('workitemtype') == 'User Story':  # Filter for User Stories
+                user_stories.append(child_data)
+
+    return user_stories

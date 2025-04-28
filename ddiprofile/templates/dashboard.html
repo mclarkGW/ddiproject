@@ -15,6 +15,7 @@
         }
         .container {
             width: 100%;
+            margin: 0;
         }
         h1 {
             text-align: center;
@@ -35,36 +36,23 @@
             font-size: small;
             cursor: pointer;
         }
-        td {
-            font-size: medium;
-        }
-        .initatives-table {
-            margin-left: 20px;
-            width: 100%;
-        }
-        .changerequests-table {
-            margin-left: 10px;
-            width: 100%;
+        .expand-btn {
+            cursor: pointer;
+            font-weight: bold;
         }
         .hidden {
             display: none;
         }
-        .expand-btn {
-            cursor: pointer;
-        }
-
     </style>
     <script>
-        let sortOrder = "asc";
-
-        function toggleEpics(initiativeId) {
-            var epicsRow = document.getElementById('epics-' + initiativeId);
-            var expandBtn = document.getElementById('expand-btn-' + initiativeId);
-            if (epicsRow.classList.contains('hidden')) {
-                epicsRow.classList.remove('hidden');
+        function toggleRow(rowId) {
+            var row = document.getElementById(rowId);
+            var expandBtn = document.getElementById('expand-btn-' + rowId);
+            if (row.classList.contains('hidden')) {
+                row.classList.remove('hidden');
                 expandBtn.innerHTML = '-';
             } else {
-                epicsRow.classList.add('hidden');
+                row.classList.add('hidden');
                 expandBtn.innerHTML = '+';
             }
         }
@@ -74,11 +62,11 @@
     <div class="container">
         <h1>DDI Dashboard</h1>
         <br>
-        <table class="initaitives-table">
+        <table>
             <thead class="table-success text-center" style="position: sticky; top: 0; z-index: 1000;">
                 <tr>
-                    <th rowspan="2"></th>
-                    <th rowspan="2">CRs</th>
+                    <th rowspan="2">+/-</th>
+                    <th rowspan="2">Related #</th>
                     <th rowspan="2">ID</th>
                     <th rowspan="2">Deal</th>
                     <th rowspan="2">Client Account</th>
@@ -100,7 +88,7 @@
             <tbody>
                 {% for initiative in initiatives %}
                 <tr>
-                    <td class="expand-btn" id="expand-btn-{{ initiative.id }}" onclick="toggleEpics({{ initiative.id }})">
+                    <td class="expand-btn" id="expand-btn-initiative-{{ initiative.id }}" onclick="toggleRow('changerequests-{{ initiative.id }}')">
                         {% if initiative.change_requests.all %}
                             +
                         {% else %}
@@ -139,48 +127,66 @@
                     <td><span class="badge text-bg-light">{{ initiative.currentphase }}</span></td>
                 </tr>
                 {% if initiative.change_requests.all %}
-                <tr id="epics-{{ initiative.id }}" class="hidden">
+                <tr id="changerequests-{{ initiative.id }}" class="hidden">
                     <td colspan="14">
-                        <table class="changerequests-table">
-                            <thead style="position: sticky; top: 0; z-index: 1000;">
+                        <table>
+                            <thead style="position: sticky; top: 0; z-index: 1000" class="table-danger text-center">
                                 <tr>
-                                    <th class="table-danger text-center" >ID</th>
-                                    <th class="table-danger text-center" >Type</th>
-                                    <th class="table-danger text-center" >Title</th>
-                                    <th class="table-danger text-center" >State</th>
-                                    <th class="table-danger text-center" >Client Account</th>
-                                    <th class="table-danger text-center" >Solution GTM</th>
-                                    <th class="table-danger text-center" >Target Date</th>
-                                    <th class="table-danger text-center" >HL Estimate</th>
-                                    <th class="table-primary text-center" >Work Description</th>
+                                    <th>+/-</th>
+                                    <th>Children #</th>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Title</th>
+                                    <th>State</th>
+                                    <th>Client Account</th>
+                                    <th>Solution GTM</th>
+                                    <th>Target Date</th>
+                                    <th>HL Estimate</th>
+                                    <th>Contract ID#</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for change_request in initiative.change_requests.all|dictsort:"tt_workdescription" %}
+                                {% for change_request in initiative.change_requests.all %}
                                 <tr>
-                                    <td class="text-left"><span class="badge text-bg-light">
+                                    <td class="expand-btn" id="expand-btn-cr-{{ change_request.id }}" onclick="toggleRow('features-{{ change_request.id }}')">
+                                        {% if change_request.features.all %}
+                                            +
+                                        {% else %}
+                                            &nbsp;
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if change_request.features.all %}
+                                        <span class="badge text-bg-light">{{ change_request.features.count }}</span>
+                                        {% else %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center"><span class="badge text-bg-light">
                                         <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ change_request.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ change_request.id }}</a>
-                                    </span>
+                                        </span>
                                     </td>
                                     <td class="text-center">
                                         <span class="badge
-                                        {% if change_request.workitemtype == 'Change Request' %}text-bg-danger
-                                        {% elif change_request.workitemtype == 'GAP' %}text-bg-primary
-                                        {% else %}text-bg-light
-                                        {% endif %}
-                                        ">{{ change_request.workitemtype }}</span>
+                                            {% if change_request.workitemtype == 'Change Request' %}text-bg-danger
+                                            {% elif change_request.workitemtype == 'GAP' %}text-bg-primary
+                                            {% else %}text-bg-light
+                                            {% endif %}
+                                            ">{{ change_request.workitemtype }}
+                                        </span>
+                                    </td>
                                     <td><span class="badge text-bg-light">{{ change_request.title }}</span></td>
                                     <td class="text-center">
                                         <span class="badge
-                                        {% if change_request.state == 'Funnel' %}text-bg-danger
-                                        {% elif change_request.state == 'Done' %}text-bg-primary
-                                        {% elif change_request.state == 'In Progress' %}text-bg-warning
-                                        {% elif change_request.state == 'Reviewing' %}text-bg-light
-                                        {% elif change_request.state == 'Analyzing' %}text-bg-info
-                                        {% elif change_request.state == 'Committed' %}text-bg-success
-                                        {% else %}text-bg-light
-                                        {% endif %}
-                                        ">{{ change_request.state }}</span>
+                                            {% if change_request.state == 'Funnel' %}text-bg-danger
+                                            {% elif change_request.state == 'Done' %}text-bg-primary
+                                            {% elif change_request.state == 'In Progress' %}text-bg-warning
+                                            {% elif change_request.state == 'Reviewing' %}text-bg-light
+                                            {% elif change_request.state == 'Analyzing' %}text-bg-info
+                                            {% elif change_request.state == 'Committed' %}text-bg-success
+                                            {% else %}text-bg-light
+                                            {% endif %}
+                                            ">{{ change_request.state }}
+                                        </span>
                                     </td>
                                     <td><span class="badge text-bg-light">{{ change_request.clientaccounts}}</span></td>
                                     <td><span class="badge text-bg-light">{{ change_request.solutiongotomarket}}</span></td>
@@ -188,6 +194,94 @@
                                     <td><span class="badge text-bg-light">{{ change_request.highlevelestimate}}</span></td>
                                     <td><span class="badge text-bg-light">{{ change_request.tt_workdescription}}</span></td>
                                 </tr>
+                                {% if change_request.features.all %}
+                                <tr id="features-{{ change_request.id }}" class="hidden">
+                                    <td colspan="14">
+                                        <table>
+                                            <thead style="position: sticky; top: 0; z-index: 1000" class="table-info text-center">
+                                                <tr>
+                                                    <th>+/-</th>
+                                                    <th>Children #</th>
+                                                    <th>Contract ID</th>
+                                                    <th>ID</th>
+                                                    <th>Feature Title</th>
+                                                    <th>State</th>
+                                                    <th>Module</th>
+                                                    <th>Start Date</th>
+                                                    <th>Target Date</th>
+                                                    <th>Area Path</th>
+                                                    <th>Iteration Path</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for feature in change_request.features.all %}
+                                                <tr>
+                                                    <td class="expand-btn" id="expand-btn-feature-{{ feature.id }}" onclick="toggleRow('userstories-{{ feature.id }}')">
+                                                        {% if feature.user_stories.all %}
+                                                            +
+                                                        {% else %}
+                                                            &nbsp;
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if feature.user_stories.all %}
+                                                            <span class="badge text-bg-light">{{ feature.user_stories.count }}
+                                                            </span>
+                                                        {% else %}
+                                                        {% endif %}
+                                                    </td>
+                                                    <td><span class="badge text-bg-light">{{ feature.tt_workdescription }}</span></td>
+                                                    <td class="text-center"><span class="badge text-bg-light">
+                                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ feature.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ feature.id }}</a>
+                                                        </span>
+                                                    </td>
+                                                    <td><span class="badge text-bg-light">{{ feature.title }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ feature.state }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ feature.tt_initiative }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ feature.startdate|date:"m/d/y"|default:"" }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ feature.targetdate|date:"m/d/y"|default:"" }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ feature.areapath }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
+                                                </tr>
+                                                {% if feature.user_stories.all %}
+                                                <tr id="userstories-{{ feature.id }}" class="hidden">
+                                                    <td colspan="14">
+                                                        <table>
+                                                            <thead style="position: sticky; top: 0; z-index: 1000" class="table-warning text-center">
+                                                                <tr>
+                                                                    <th>ID</th>
+                                                                    <th>User Story Title</th>
+                                                                    <th>State</th>
+                                                                    <th>Story Points</th>
+                                                                    <th>Area Path</th>
+                                                                    <th>Iteration Path</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for user_story in feature.user_stories.all %}
+                                                                <tr>
+                                                                    <td class="text-center"><span class="badge text-bg-light">
+                                                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ user_story.id }}</a>
+                                                                        </span>
+                                                                    </td>
+                                                                    <td><span class="badge text-bg-light">{{ user_story.title }}</span></td>
+                                                                    <td><span class="badge text-bg-light">{{ user_story.state }}</span></td>
+                                                                    <td><span class="badge text-bg-light">{{ user_story.storypoints }}</span></td>
+                                                                    <td><span class="badge text-bg-light">{{ user_story.areapath }}</span></td>
+                                                                    <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
+                                                                </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -197,14 +291,6 @@
                 {% endfor %}
             </tbody>
         </table>
-        <div class="container" style="text-align: center; padding: 10px;">
-            <span class="badge text-bg-primary">Last Refreshed: </span>
-            <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ last_refreshed.title }} EST</span>
-        </div>
     </div>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 {% endblock %}

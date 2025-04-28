@@ -12,11 +12,23 @@ def index(request):
 
 # DDI Dashboard View
 def dashboard_view(request):
-    initiatives = Initiative.objects.all().prefetch_related('change_requests').order_by('title')  # Sort Initiatives by title
     last_refreshed = LastRefreshed.objects.first()
+    initiatives = Initiative.objects.all() \
+        .prefetch_related(
+            'change_requests'
+            ) \
+            .order_by('title')
+    cr = ChangeRequest.objects.all() \
+        .prefetch_related(
+            'features',
+            'features__user_stories' 
+            ) \
+            .order_by('title')
+    
 
     context = {
         'initiatives': initiatives,
+        'cr': cr,
         'last_refreshed': last_refreshed,
     }
 
