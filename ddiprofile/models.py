@@ -96,3 +96,11 @@ class UserStory(models.Model):
 class LastRefreshed(models.Model):
     id = models.IntegerField(primary_key=True)
     title = models.CharField(max_length=255)
+
+class Iteration(models.Model):
+    iteration_id = models.CharField(max_length=100, unique=True)  # Unique ID from Azure
+    name = models.CharField(max_length=255)  # Iteration name
+    path = models.CharField(max_length=255)  # Iteration path
+    start_date = models.DateField(null=True, blank=True)  # Start date
+    finish_date = models.DateField(null=True, blank=True)  # Finish date
+    scriptupdated = models.CharField(max_length=255)  # Last updated timestamp

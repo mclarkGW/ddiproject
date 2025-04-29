@@ -138,8 +138,6 @@
                                     <th>Type</th>
                                     <th>Title</th>
                                     <th>State</th>
-                                    <th>Client Account</th>
-                                    <th>Solution GTM</th>
                                     <th>Target Date</th>
                                     <th>HL Estimate</th>
                                     <th>Contract ID#</th>
@@ -190,8 +188,6 @@
                                             ">{{ change_request.state }}
                                         </span>
                                     </td>
-                                    <td><span class="badge text-bg-light">{{ change_request.clientaccounts}}</span></td>
-                                    <td><span class="badge text-bg-light">{{ change_request.solutiongotomarket}}</span></td>
                                     <td><span class="badge text-bg-light">{{ change_request.targetdate|date:"m/d/y"|default:""  }}</span></td>
                                     <td><span class="badge text-bg-light">{{ change_request.highlevelestimate}}</span></td>
                                     <td><span class="badge text-bg-light">{{ change_request.tt_workdescription}}</span></td>
@@ -318,6 +314,10 @@
                 {% endfor %}
             </tbody>
         </table>
+        <div class="container" style="text-align: center; padding: 10px;">
+            <span class="badge text-bg-primary">Last Refreshed: </span>
+            <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ last_refreshed.title }} EST</span>
+        </div>
     </div>
 </body>
 {% endblock %}
