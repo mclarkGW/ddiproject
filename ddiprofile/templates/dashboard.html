@@ -45,15 +45,15 @@
         }
     </style>
     <script>
-        function toggleRow(rowId) {
+        function toggleRow(rowId, toggleId) {
             var row = document.getElementById(rowId);
-            var expandBtn = document.getElementById('expand-btn-' + rowId);
+            var expandBtn = document.getElementById(toggleId);
             if (row.classList.contains('hidden')) {
-                row.classList.remove('hidden');
-                expandBtn.innerHTML = '-';
+                row.classList.remove('hidden'); // Show the row
+                expandBtn.innerHTML = '-';      // Update the button to "-"
             } else {
-                row.classList.add('hidden');
-                expandBtn.innerHTML = '+';
+                row.classList.add('hidden');    // Hide the row
+                expandBtn.innerHTML = '+';      // Update the button to "+"
             }
         }
     </script>
@@ -79,16 +79,16 @@
                     <th rowspan="2">Cur Phase</th>
                 </tr>
                 <tr>
-                    <th class="table-primary text-center">Start</th>
-                    <th class="table-primary text-center">% Cmpl</th>
-                    <th class="table-primary text-center">Start</th>
-                    <th class="table-primary text-center">% Cmpl</th>
+                    <th class="table-primary">Start</th>
+                    <th class="table-primary">% Cmpl</th>
+                    <th class="table-primary">Start</th>
+                    <th class="table-primary">% Cmpl</th>
                 </tr>
             </thead>
             <tbody>
                 {% for initiative in initiatives %}
                 <tr>
-                    <td class="expand-btn" id="expand-btn-initiative-{{ initiative.id }}" onclick="toggleRow('changerequests-{{ initiative.id }}')">
+                    <td class="expand-btn text-center" id="expand-btn-initiative-{{ initiative.id }}" onclick="toggleRow('changerequests-{{ initiative.id }}', 'expand-btn-initiative-{{ initiative.id }}')">
                         {% if initiative.change_requests.all %}
                             +
                         {% else %}
@@ -133,7 +133,7 @@
                             <thead style="position: sticky; top: 0; z-index: 1000" class="table-danger text-center">
                                 <tr>
                                     <th>+/-</th>
-                                    <th>Children #</th>
+                                    <th>Assoicated #</th>
                                     <th>ID</th>
                                     <th>Type</th>
                                     <th>Title</th>
@@ -148,7 +148,7 @@
                             <tbody>
                                 {% for change_request in initiative.change_requests.all %}
                                 <tr>
-                                    <td class="expand-btn" id="expand-btn-cr-{{ change_request.id }}" onclick="toggleRow('features-{{ change_request.id }}')">
+                                    <td class="expand-btn text-center" id="expand-btn-cr-{{ change_request.id }}" onclick="toggleRow('features-{{ change_request.id }}', 'expand-btn-cr-{{ change_request.id }}')">
                                         {% if change_request.features.all %}
                                             +
                                         {% else %}
@@ -177,12 +177,14 @@
                                     <td><span class="badge text-bg-light">{{ change_request.title }}</span></td>
                                     <td class="text-center">
                                         <span class="badge
-                                            {% if change_request.state == 'Funnel' %}text-bg-danger
-                                            {% elif change_request.state == 'Done' %}text-bg-primary
+                                            {% if change_request.state == 'Funnel' %}text-bg-secondary
+                                            {% elif change_request.state == 'Reviewing' %}text-bg-secondary
+                                            {% elif change_request.state == 'Analyzing' %}text-bg-secondary
+                                            {% elif change_request.state == 'Backlog' %}text-bg-info
+                                            {% elif change_request.state == 'Committed' %}text-bg-info
                                             {% elif change_request.state == 'In Progress' %}text-bg-warning
-                                            {% elif change_request.state == 'Reviewing' %}text-bg-light
-                                            {% elif change_request.state == 'Analyzing' %}text-bg-info
-                                            {% elif change_request.state == 'Committed' %}text-bg-success
+                                            {% elif change_request.state == 'BLOCKED' %}text-bg-danger
+                                            {% elif change_request.state == 'Done' %}text-bg-primary
                                             {% else %}text-bg-light
                                             {% endif %}
                                             ">{{ change_request.state }}
@@ -209,14 +211,14 @@
                                                     <th>Module</th>
                                                     <th>Start Date</th>
                                                     <th>Target Date</th>
-                                                    <th>Area Path</th>
+                                                    <th>HL Estimate</th>
                                                     <th>Iteration Path</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {% for feature in change_request.features.all %}
                                                 <tr>
-                                                    <td class="expand-btn" id="expand-btn-feature-{{ feature.id }}" onclick="toggleRow('userstories-{{ feature.id }}')">
+                                                    <td class="expand-btn text-center" id="expand-btn-feature-{{ feature.id }}" onclick="toggleRow('userstories-{{ feature.id }}', 'expand-btn-feature-{{ feature.id }}')">
                                                         {% if feature.user_stories.all %}
                                                             +
                                                         {% else %}
@@ -236,11 +238,25 @@
                                                         </span>
                                                     </td>
                                                     <td><span class="badge text-bg-light">{{ feature.title }}</span></td>
-                                                    <td><span class="badge text-bg-light">{{ feature.state }}</span></td>
+                                                    <td class="text-center">
+                                                        <span class="badge
+                                                            {% if feature.state == 'Funnel' %}text-bg-secondary
+                                                            {% elif feature.state == 'Reviewing' %}text-bg-secondary
+                                                            {% elif feature.state == 'Analyzing' %}text-bg-secondary
+                                                            {% elif feature.state == 'Backlog' %}text-bg-info
+                                                            {% elif feature.state == 'Committed' %}text-bg-info
+                                                            {% elif feature.state == 'In Progress' %}text-bg-warning
+                                                            {% elif feature.state == 'BLOCKED' %}text-bg-danger
+                                                            {% elif feature.state == 'Done' %}text-bg-primary
+                                                            {% else %}text-bg-light
+                                                            {% endif %}
+                                                            ">{{ feature.state }}
+                                                        </span>
+                                                    </td>
                                                     <td><span class="badge text-bg-light">{{ feature.tt_initiative }}</span></td>
                                                     <td><span class="badge text-bg-light">{{ feature.startdate|date:"m/d/y"|default:"" }}</span></td>
                                                     <td><span class="badge text-bg-light">{{ feature.targetdate|date:"m/d/y"|default:"" }}</span></td>
-                                                    <td><span class="badge text-bg-light">{{ feature.areapath }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ feature.highlevelestimate }}</span></td>
                                                     <td><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
                                                 </tr>
                                                 {% if feature.user_stories.all %}
@@ -253,7 +269,6 @@
                                                                     <th>User Story Title</th>
                                                                     <th>State</th>
                                                                     <th>Story Points</th>
-                                                                    <th>Area Path</th>
                                                                     <th>Iteration Path</th>
                                                                 </tr>
                                                             </thead>
@@ -265,9 +280,21 @@
                                                                         </span>
                                                                     </td>
                                                                     <td><span class="badge text-bg-light">{{ user_story.title }}</span></td>
-                                                                    <td><span class="badge text-bg-light">{{ user_story.state }}</span></td>
+                                                                    <td class="text-center">
+                                                                        <span class="badge
+                                                                            {% if user_story.state == 'New' %}text-bg-secondary
+                                                                            {% elif user_story.state == 'Backlog' %}text-bg-info
+                                                                            {% elif user_story.state == 'Ready' %}text-bg-info
+                                                                            {% elif user_story.state == 'In Progress' %}text-bg-warning
+                                                                            {% elif user_story.state == 'Test' %}text-bg-info
+                                                                            {% elif user_story.state == 'BLOCKED' %}text-bg-danger
+                                                                            {% elif user_story.state == 'Done' %}text-bg-primary
+                                                                            {% else %}text-bg-light
+                                                                            {% endif %}
+                                                                            ">{{ user_story.state }}
+                                                                        </span>
+                                                                    </td>
                                                                     <td><span class="badge text-bg-light">{{ user_story.storypoints }}</span></td>
-                                                                    <td><span class="badge text-bg-light">{{ user_story.areapath }}</span></td>
                                                                     <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
                                                                 </tr>
                                                                 {% endfor %}
