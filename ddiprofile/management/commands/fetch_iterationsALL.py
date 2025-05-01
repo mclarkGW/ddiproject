@@ -16,7 +16,7 @@ class Command(BaseCommand):
     help = "Fetch all iterations from Azure DevOps (project-wide) and store them in the database"
 
     def handle(self, *args, **kwargs):
-        # Clear all records from the Iteration table
+        # Clear all records from the Iteration tables
         Iteration.objects.all().delete()
 
         iterations = self.fetch_all_iterations()
@@ -45,19 +45,11 @@ class Command(BaseCommand):
             return []
 
     def flatten_iterations(self, iteration_node):
-        """Flatten nested iterations into a flat list with filtering"""
+        """Flatten nested iterations into a flat list"""
         iterations = []
 
         def traverse(node, parent_path=""):
             path = f"{parent_path}\\{node['name']}" if parent_path else node['name']
-
-            # Filter to include only iterations where the second node starts with 'FY' or 'RPH'
-            path_parts = path.split("\\")
-            if len(path_parts) > 1:
-                second_node = path_parts[1]
-                if not (second_node.startswith("FY") or second_node.startswith("RPH")):
-                    return  # Skip nodes that do not meet the criteria
-
             if "attributes" in node:  # If it's an iteration node
                 iterations.append({
                     "id": node.get("id"),
@@ -65,7 +57,6 @@ class Command(BaseCommand):
                     "path": path,
                     "attributes": node.get("attributes", {})
                 })
-
             for child in node.get("children", []):
                 traverse(child, path)
 
@@ -82,6 +73,7 @@ class Command(BaseCommand):
             start_date = attributes.get("startDate")
             finish_date = attributes.get("finishDate")
             
+
             # Convert startDate and finishDate to datetime objects
             start_date = start_date and datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%SZ").date()
             finish_date = finish_date and datetime.strptime(finish_date, "%Y-%m-%dT%H:%M:%SZ").date()

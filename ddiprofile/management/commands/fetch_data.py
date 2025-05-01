@@ -122,6 +122,8 @@ class Command(BaseCommand):
 
                             # Parse dates
                             parsed_targetdate = parse_date(changerequest_data.get('targetdate'))
+                            parsed_createddate = parse_date(changerequest_data.get('createddate'))
+                            parsed_requiredbydate = parse_date(changerequest_data.get('requiredbydate'))
 
                             # Update or create ChangeRequest
                             defaults = {
@@ -141,6 +143,8 @@ class Command(BaseCommand):
                                 'tt_expwbs': changerequest_data.get('tt_expwbs'),
                                 'tt_onshorewbs': changerequest_data.get('tt_onshorewbs'),
                                 'tt_offshorewbs': changerequest_data.get('tt_offshorewbs'),
+                                'createddate': parsed_createddate,
+                                'requiredbydate': parsed_requiredbydate,
                                 'initiative': initiative,
                             }
 
@@ -186,6 +190,7 @@ class Command(BaseCommand):
                                     # Parse dates
                                     parsed_targetdate = parse_date(feature_data.get('targetdate'))
                                     parsed_startdate = parse_date(feature_data.get('startdate'))
+                                    parsed_createddate = parse_date(feature_data.get('createddate'))
 
                                     # Update or create Feature
                                     defaults = {
@@ -206,6 +211,7 @@ class Command(BaseCommand):
                                         'tt_expwbs': feature_data.get('tt_expwbs'),
                                         'tt_onshorewbs': feature_data.get('tt_onshorewbs'),
                                         'tt_offshorewbs': feature_data.get('tt_offshorewbs'),
+                                        'createddate': parsed_createddate,
                                         'cr_related': change_request_instance,
                                     }
 
@@ -218,10 +224,15 @@ class Command(BaseCommand):
                                     user_stories = fetch_user_story_children(organization, project_epics, pat,[feature_instance.id])
                                     if user_stories:
                                         for user_story_data in user_stories:
+                                            # Parse dates
+                                            parsed_createddate = parse_date(user_story_data.get('createddate'))
+
                                             # Save each User Story
                                             print(f"  Saving User Story: {user_story_data.get('id')} | {user_story_data.get('title')}")
                                             UserStory.objects.update_or_create(
                                                 id=user_story_data.get('id'),
+                                                
+
                                                 defaults={
                                                     'title': user_story_data.get('title'),
                                                     'workitemtype': user_story_data.get('workitemtype'),
@@ -237,6 +248,7 @@ class Command(BaseCommand):
                                                     'tt_expwbs': user_story_data.get('tt_expwbs'),
                                                     'tt_onshorewbs': user_story_data.get('tt_onshorewbs'),
                                                     'tt_offshorewbs': user_story_data.get('tt_offshorewbs'),
+                                                    'createddate': parsed_createddate,
                                                     'feature_related': feature_instance
                                                 }
                                             )
@@ -326,9 +338,9 @@ def fetch_work_item_details(organization, project, pat, work_item_ids):
                     'uatstart': fields.get('Custom.ddi_UATStartDate', '') if 'fields' in item else '',
                     'statuschoice': fields.get('Custom.StatusChoice', '') if 'fields' in item else 'No Status Found',
                     'statustextbox': fields.get('Custom.StatusTextBox', '') if 'fields' in item else 'No Status Narrative Found',
-                    'requiredbdate': fields.get('Custom.RequiredByDate', '') if 'fields' in item else '',
+                    'requiredbydate': fields.get('Custom.RequiredByDate', '') if 'fields' in item else '',
                     'epiccategory': fields.get('Custom.EpicCategory', '') if 'fields' in item else 'No Epic Category Found',
-                    'created_date': fields.get('System.CreatedDate', '') if 'fields' in item else '',
+                    'createddate': fields.get('System.CreatedDate', '') if 'fields' in item else '',
                     'enddate': fields.get('Microsoft.VSTS.Scheduling.EndDate', '') if 'fields' in item else '',
                     'state': fields.get('System.State', '') if 'fields' in item else '',
                     'areapath': fields.get('System.AreaPath', '') if 'fields' in item else '',

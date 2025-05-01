@@ -1,3 +1,4 @@
+from django.db.models import Sum, F, FloatField
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Initiative,ChangeRequest,LastRefreshed, Iteration
 from datetime import datetime
@@ -18,14 +19,18 @@ def dashboard_view(request):
         .prefetch_related(
             'change_requests'
             ) \
-            .order_by('title')
-    cr = ChangeRequest.objects.all() \
-        .prefetch_related(
-            'features',
-            'features__user_stories' 
-            ) \
-            .order_by('title')
+            .order_by('clientaccounts')
     
+    # Annotate "Total_Planned" for each ChangeRequest
+    cr = ChangeRequest.objects.all() \
+        .prefetch_related('features', 'features__user_stories') \
+        .annotate(
+            total_planned=Sum(
+                F('features__user_stories__storypoints') * 8,
+                output_field=FloatField()
+            )
+        ) \
+        .order_by('tt_workdescription')
 
     context = {
         'initiatives': initiatives,
@@ -49,7 +54,7 @@ def iteration_view(request):
         if len(path_parts) > 1:  # Ensure there is a second level (Release)
             release = path_parts[1]
         else:
-            release = "Uncategorized"  # Default group for invalid paths
+            release = "Project Level"  # Default group for invalid paths
 
         if release not in grouped_iterations:
             grouped_iterations[release] = []
@@ -60,3 +65,29 @@ def iteration_view(request):
         'iteration_last_refreshed': iteration_last_refreshed,
     }
     return render(request, 'iteration.html', context)
+
+def dashboard_view2(request):
+    # Last Refreshed
+    last_refreshed = LastRefreshed.objects.first()
+
+    # Initiatives with related Change Requests
+    initiatives = Initiative.objects.all() \
+        .prefetch_related(
+            'change_requests'
+        ) \
+        .order_by('title')
+
+    # Grouping initiatives by title or any other relevant property
+    grouped_initiatives = {}
+    for initiative in initiatives:
+        title = initiative.title
+        if title not in grouped_initiatives:
+            grouped_initiatives[title] = []
+        grouped_initiatives[title].append(initiative)
+
+    context = {
+        'grouped_initiatives': grouped_initiatives,
+        'last_refreshed': last_refreshed,
+    }
+
+    return render(request, 'dashboard2.html', context)

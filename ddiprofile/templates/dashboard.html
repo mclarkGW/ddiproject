@@ -66,7 +66,7 @@
             <thead class="table-success text-center" style="position: sticky; top: 0; z-index: 1000;">
                 <tr>
                     <th rowspan="2">+/-</th>
-                    <th rowspan="2">Related #</th>
+                    <th rowspan="2"># Related</th>
                     <th rowspan="2">ID</th>
                     <th rowspan="2">Deal</th>
                     <th rowspan="2">Client Account</th>
@@ -105,11 +105,11 @@
                         <a href="https://dev.azure.com/PayerPortfolio/MES%20(Portfolio)/_workitems/edit/{{ initiative.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ initiative.id }}</a>
                     </span></td>
                     <td class="text-left"><span class="badge text-bg-light">{{ initiative.title }}</span></td>
-                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.clientaccounts }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.clientaccounts }}</span></td>
                     <td class="text-left"><span class="badge text-bg-light">{{ initiative.solutiongotomarket }}</span></td>
-                    <td><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
-                    <td><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
-                    <td><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
                     <td>{% if initiative.sitcmpl %}
                         <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.sitcmpl }}%" aria-valuemin="0" aria-valuemax="100">
                             <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.sitcmpl }}%">{{ initiative.sitcmpl }}%</div>
@@ -123,8 +123,8 @@
                         </div>
                         {% endif %}
                     </td>
-                    <td><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
-                    <td><span class="badge text-bg-light">{{ initiative.currentphase }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.currentphase }}</span></td>
                 </tr>
                 {% if initiative.change_requests.all %}
                 <tr id="changerequests-{{ initiative.id }}" class="hidden">
@@ -133,18 +133,20 @@
                             <thead style="position: sticky; top: 0; z-index: 1000" class="table-danger text-center">
                                 <tr>
                                     <th>+/-</th>
-                                    <th>Assoicated #</th>
+                                    <th># Assoicated</th>
                                     <th>ID</th>
                                     <th>Type</th>
                                     <th>Title</th>
                                     <th>State</th>
-                                    <th>Target Date</th>
+                                    <th>Submitted</th>
+                                    <th>Required By</th>
+                                    <th>Target</th>
                                     <th>HL Estimate</th>
-                                    <th>Contract ID#</th>
+                                    <th>Contract ID #</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for change_request in initiative.change_requests.all %}
+                                {% for change_request in initiative.change_requests.all|orderby:'tt_workdescription' %}
                                 <tr>
                                     <td class="expand-btn text-center" id="expand-btn-cr-{{ change_request.id }}" onclick="toggleRow('features-{{ change_request.id }}', 'expand-btn-cr-{{ change_request.id }}')">
                                         {% if change_request.features.all %}
@@ -188,9 +190,11 @@
                                             ">{{ change_request.state }}
                                         </span>
                                     </td>
-                                    <td><span class="badge text-bg-light">{{ change_request.targetdate|date:"m/d/y"|default:""  }}</span></td>
-                                    <td><span class="badge text-bg-light">{{ change_request.highlevelestimate}}</span></td>
-                                    <td><span class="badge text-bg-light">{{ change_request.tt_workdescription}}</span></td>
+                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.createddate|date:"m/d/y"|default:""  }}</span></td>
+                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.requiredbydate|date:"m/d/y"|default:""  }}</span></td>
+                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.targetdate|date:"m/d/y"|default:""  }}</span></td>
+                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.highlevelestimate|floatformat:0 }}</span></td>
+                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.tt_workdescription}}</span></td>
                                 </tr>
                                 {% if change_request.features.all %}
                                 <tr id="features-{{ change_request.id }}" class="hidden">
@@ -199,7 +203,7 @@
                                             <thead style="position: sticky; top: 0; z-index: 1000" class="table-info text-center">
                                                 <tr>
                                                     <th>+/-</th>
-                                                    <th>Children #</th>
+                                                    <th># Children</th>
                                                     <th>Contract ID</th>
                                                     <th>ID</th>
                                                     <th>Feature Title</th>
@@ -249,11 +253,11 @@
                                                             ">{{ feature.state }}
                                                         </span>
                                                     </td>
-                                                    <td><span class="badge text-bg-light">{{ feature.tt_initiative }}</span></td>
-                                                    <td><span class="badge text-bg-light">{{ feature.startdate|date:"m/d/y"|default:"" }}</span></td>
-                                                    <td><span class="badge text-bg-light">{{ feature.targetdate|date:"m/d/y"|default:"" }}</span></td>
-                                                    <td><span class="badge text-bg-light">{{ feature.highlevelestimate }}</span></td>
-                                                    <td><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
+                                                    <td class="text-center"><span class="badge text-bg-light">{{ feature.tt_initiative }}</span></td>
+                                                    <td class="text-center"><span class="badge text-bg-light">{{ feature.startdate|date:"m/d/y"|default:"" }}</span></td>
+                                                    <td class="text-center"><span class="badge text-bg-light">{{ feature.targetdate|date:"m/d/y"|default:"" }}</span></td>
+                                                    <td class="text-center"><span class="badge text-bg-light">{{ feature.highlevelestimate|floatformat:0  }}</span></td>
+                                                    <td class="text-left"><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
                                                 </tr>
                                                 {% if feature.user_stories.all %}
                                                 <tr id="userstories-{{ feature.id }}" class="hidden">
@@ -290,8 +294,8 @@
                                                                             ">{{ user_story.state }}
                                                                         </span>
                                                                     </td>
-                                                                    <td><span class="badge text-bg-light">{{ user_story.storypoints }}</span></td>
-                                                                    <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
+                                                                    <td class="text-center"><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0  }}</span></td>
+                                                                    <td class="text-left"><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
                                                                 </tr>
                                                                 {% endfor %}
                                                             </tbody>

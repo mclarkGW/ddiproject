@@ -29,7 +29,7 @@ class Epic(models.Model):
     enddate = models.DateField(blank=True, null=True)
     statuschoice = models.CharField(max_length=100, blank=True, null=True)
     statustextbox = models.TextField(blank=True, null=True)
-    requiredbdate = models.DateField(blank=True, null=True)
+    requiredbydate = models.DateField(blank=True, null=True)
     epiccategory = models.CharField(max_length=100, blank=True, null=True)
     created_date = models.DateField(blank=True, null=True)
     initiative = models.ForeignKey(Initiative, on_delete=models.CASCADE, related_name='epics')
@@ -52,6 +52,8 @@ class ChangeRequest(models.Model):
     tt_expwbs = models.CharField(max_length=255, blank=True, null=True)
     tt_onshorewbs = models.CharField(max_length=255, blank=True, null=True)
     tt_offshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    createddate = models.DateField(blank=True, null=True)
+    requiredbydate = models.DateField(blank=True, null=True)
     initiative = models.ForeignKey(Initiative, on_delete=models.CASCADE, related_name='change_requests')
 
 class Feature(models.Model):
@@ -73,6 +75,7 @@ class Feature(models.Model):
     tt_expwbs = models.CharField(max_length=255, blank=True, null=True)
     tt_onshorewbs = models.CharField(max_length=255, blank=True, null=True)
     tt_offshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    createddate = models.DateField(blank=True, null=True)
     cr_related = models.ForeignKey(ChangeRequest, on_delete=models.CASCADE, related_name='features')
 
 class UserStory(models.Model):
@@ -91,6 +94,7 @@ class UserStory(models.Model):
     tt_expwbs = models.CharField(max_length=255, blank=True, null=True)
     tt_onshorewbs = models.CharField(max_length=255, blank=True, null=True)
     tt_offshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    createddate = models.DateField(blank=True, null=True)
     feature_related = models.ForeignKey(Feature, on_delete=models.CASCADE,related_name='user_stories')
 
 class LastRefreshed(models.Model):
