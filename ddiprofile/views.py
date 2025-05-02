@@ -2,6 +2,9 @@ from django.db.models import Sum, F, FloatField
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Initiative,ChangeRequest,LastRefreshed, Iteration
 from datetime import datetime
+from django.core.management import call_command
+from django.core.management.base import CommandError
+from django.http import JsonResponse
 import requests
 import base64
 import json
@@ -10,7 +13,6 @@ from itertools import groupby
 
 def index(request):
     return render(request, 'index.html')
-
 
 # DDI Dashboard View
 def dashboard_view(request):
@@ -91,3 +93,27 @@ def dashboard_view2(request):
     }
 
     return render(request, 'dashboard2.html', context)
+
+def run_fetch_iterations(request):
+    if request.method == "POST":
+        try:
+            # Call the custom management command
+            call_command('fetch_iterations')
+            return JsonResponse({"status": "success", "message": "Iterations fetched successfully!"})
+        except CommandError as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    else:
+        # Render the HTML template for GET requests
+        return render(request, "run_fetch_iterations.html")
+
+def run_fetch_data(request):
+    if request.method == "POST":
+        try:
+            # Call the custom management command
+            call_command('fetch_data')
+            return JsonResponse({"status": "success", "message": "Updated Data fetched successfully!"})
+        except CommandError as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    else:
+        # Render the HTML template for GET requests
+        return render(request, "run_fetch_data.html")
