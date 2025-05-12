@@ -18,6 +18,12 @@ class Initiative(models.Model):
     uatstart = models.DateField(blank=True, null=True)
     clientaccounts = models.CharField(max_length=255, blank=True, null=True)
     solutiongotomarket = models.CharField(max_length=255, blank=True, null=True)
+    deliverysupportleader = models.CharField(max_length=255, blank=True, null=True)
+    deliverysupportleadermail = models.CharField(max_length=255, blank=True, null=True)
+    deliverysupportseniorleader = models.CharField(max_length=255, blank=True, null=True)
+    deliverysupportseniorleadermail = models.CharField(max_length=255, blank=True, null=True)
+    deliverysupportdirector = models.CharField(max_length=255, blank=True, null=True)
+    deliverysupportdirectormail = models.CharField(max_length=255, blank=True, null=True)
 
 class Epic(models.Model):
     id = models.IntegerField(primary_key=True)

@@ -25,6 +25,7 @@ class Command(BaseCommand):
         url_epics = f'https://dev.azure.com/{organization}/{project_epics}/_apis/wit/wiql?api-version=7.0'
         # ADO Id of the Parent Play to Initiative |Customer Value: 2584481
         playid = '2584481'
+        testid = '2775737' # ADO Id of My Test Initiative MIKE CLARK TESTING
 
         auth_header = base64.b64encode(f":{pat}".encode()).decode()
         headers = {
@@ -55,7 +56,7 @@ class Command(BaseCommand):
 
                 for initiative_data in initiatives:
                     # Debugging: Log Initiative before saving
-                    print(f"Saving Initiative: {initiative_data.get('title')} | Work Item ID: {initiative_data.get('id')}")
+                    print(f"Saving Initiative: {initiative_data.get('title')} | Work Item ID: {initiative_data.get('id')}")                    
 
                     # Parse dates
                     parsed_start = parse_date(initiative_data.get('start'))
@@ -77,6 +78,12 @@ class Command(BaseCommand):
                         'uatstart': parsed_uatstart,
                         'clientaccounts': initiative_data.get('clientaccounts'),
                         'solutiongotomarket': initiative_data.get('solutiongotomarket'),
+                        'deliverysupportleader': initiative_data.get('deliverysupportleader'),
+                        'deliverysupportleadermail': initiative_data.get('deliverysupportleadermail'),
+                        'deliverysupportseniorleadermail': initiative_data.get('deliverysupportseniorleadermail'),
+                        'deliverysupportseniorleader': initiative_data.get('deliverysupportseniorleader'),
+                        'deliverysupportdirector': initiative_data.get('deliverysupportdirector'),
+                        'deliverysupportdirectormail': initiative_data.get('deliverysupportdirectormail'),
                     }
 
                     initiative, created = Initiative.objects.update_or_create(
@@ -358,7 +365,14 @@ def fetch_work_item_details(organization, project, pat, work_item_ids):
                     'tt_onshorewbs': fields.get('Custom.TT_OnShoreWBS', '') if 'fields' in item else '',
                     'tt_offshorewbs': fields.get('Custom.TT_OffShoreWBS', '') if 'fields' in item else '',
                     'storypoints': fields.get('Microsoft.VSTS.Scheduling.StoryPoints', '') if 'fields' in item else '',
+                    'deliverysupportleader': fields.get('Custom.ddi_DeliverySupportLeader', {}).get('displayName', '') if 'fields' in item else '',
+                    'deliverysupportseniorleader': fields.get('Custom.ddi_DeliverySupportSeniorLeader', {}).get('displayName', '') if 'fields' in item else '',
+                    'deliverysupportdirector': fields.get('Custom.ddi_DeliverySupportDirector', {}).get('displayName', '') if 'fields' in item else '',
+                    'deliverysupportleadermail': fields.get('Custom.ddi_DeliverySupportLeader', {}).get('uniqueName', '') if 'fields' in item else '',
+                    'deliverysupportseniorleadermail': fields.get('Custom.ddi_DeliverySupportSeniorLeader', {}).get('uniqueName', '') if 'fields' in item else '',
+                    'deliverysupportdirectormail': fields.get('Custom.ddi_DeliverySupportDirector', {}).get('uniqueName', '') if 'fields' in item else '',
                 })
+                
 
     return work_items
 

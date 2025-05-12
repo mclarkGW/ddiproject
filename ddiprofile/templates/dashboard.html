@@ -36,6 +36,23 @@
             font-size: small;
             cursor: pointer;
         }
+        thead {
+            position: sticky;
+            z-index: 1;
+            top: 0;
+            background-color: white;
+            border-bottom: 1px solid #ddd; /* Optional: Add a border for separation */
+        }
+        /* Higher z-index for expanded nested tables */
+        .nested-header {
+            z-index: 1;
+            background-color: white; /* Optional: Ensure header is opaque */
+        }
+
+        .focused-header {
+            z-index: 999; /* Ensure the focused table's header is on top */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add visual distinction */
+        }
         .expand-btn {
             cursor: pointer;
             font-weight: bold;
@@ -43,18 +60,75 @@
         .hidden {
             display: none;
         }
+        [data-tooltip] {
+            position: relative;
+            cursor: pointer;
+        }
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
     </style>
     <script>
         function toggleRow(rowId, toggleId) {
             var row = document.getElementById(rowId);
             var expandBtn = document.getElementById(toggleId);
+
             if (row.classList.contains('hidden')) {
-                row.classList.remove('hidden'); // Show the row
-                expandBtn.innerHTML = '-';      // Update the button to "-"
+                // Show the row and update button
+                row.classList.remove('hidden');
+                expandBtn.innerHTML = '-';
+
+                // Set higher z-index for the nested table header
+                var nestedHeader = row.querySelector('thead');
+                if (nestedHeader) {
+                    nestedHeader.classList.add('focused-header');
+                }
             } else {
-                row.classList.add('hidden');    // Hide the row
-                expandBtn.innerHTML = '+';      // Update the button to "+"
+                // Hide the row and reset button
+                row.classList.add('hidden');
+                expandBtn.innerHTML = '+';
+
+                // Reset z-index for the nested table header
+                var nestedHeader = row.querySelector('thead');
+                if (nestedHeader) {
+                    nestedHeader.classList.remove('focused-header');
+                }
             }
+        }
+
+        // Ensure only one header has the highest z-index at a time
+        window.addEventListener('scroll', function () {
+            var headers = document.querySelectorAll('thead');
+            headers.forEach(function (header) {
+                if (isElementInViewport(header)) {
+                    header.classList.add('focused-header');
+                } else {
+                    header.classList.remove('focused-header');
+                }
+            });
+        });
+
+        // Helper function to check if an element is in the viewport
+        function isElementInViewport(el) {
+            var rect = el.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
         }
     </script>
 </head>
@@ -63,7 +137,7 @@
         <h1>DDI Dashboard</h1>
         <br>
         <table>
-            <thead class="table-success text-center" style="position: sticky; top: 0; z-index: 1000;">
+            <thead class="table-success text-center">
                 <tr>
                     <th rowspan="2">+/-</th>
                     <th rowspan="2"># Related</th>
@@ -71,6 +145,9 @@
                     <th rowspan="2">Deal</th>
                     <th rowspan="2">Client Account</th>
                     <th rowspan="2">Solution GTM</th>
+                    <th rowspan="2">Delivery Support Leader</th>
+                    <th rowspan="2">Delivery Support Senior Leader</th>
+                    <th rowspan="2">Delivery Support Director</th>
                     <th rowspan="2">Start</th>
                     <th rowspan="2">Months</th>
                     <th colspan="2" class="sub-header">SIT</th>
@@ -107,6 +184,9 @@
                     <td class="text-left"><span class="badge text-bg-light">{{ initiative.title }}</span></td>
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.clientaccounts }}</span></td>
                     <td class="text-left"><span class="badge text-bg-light">{{ initiative.solutiongotomarket }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.deliverysupportleader }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.deliverysupportseniorleader }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.deliverysupportdirector }}</span></td>
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
@@ -128,9 +208,9 @@
                 </tr>
                 {% if initiative.change_requests.all %}
                 <tr id="changerequests-{{ initiative.id }}" class="hidden">
-                    <td colspan="14">
+                    <td colspan="16">
                         <table>
-                            <thead style="position: sticky; top: 0; z-index: 1000" class="table-danger text-center">
+                            <thead class= "table-danger text-center";"nested-header">
                                 <tr>
                                     <th>+/-</th>
                                     <th># Assoicated</th>
@@ -191,16 +271,52 @@
                                         </span>
                                     </td>
                                     <td class="text-center"><span class="badge text-bg-light">{{ change_request.createddate|date:"m/d/y"|default:""  }}</span></td>
-                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.requiredbydate|date:"m/d/y"|default:""  }}</span></td>
-                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.targetdate|date:"m/d/y"|default:""  }}</span></td>
+                                    <td class="text-center">
+                                        <span class="badge
+                                            {% if change_request|is_warning %}
+                                                text-bg-warning
+                                            {% else %}
+                                                text-bg-light
+                                            {% endif %}
+                                            "
+                                            data-tooltip="{% if change_request|is_warning %}
+                                                Required By Date is not null AND Target Date is null and Submitted Date is more than 14 days ago.
+                                            {% else %}
+                                                ""
+                                            {% endif %}
+                                        ">
+                                            {{ change_request.requiredbydate|date:"m/d/y"|default:"" }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge
+                                            {% if change_request|is_targetdate_warning %}
+                                                text-bg-danger
+                                            {% else %}
+                                                text-bg-light
+                                            {% endif %}
+                                        "
+                                        data-tooltip="{% if change_request|is_targetdate_warning %}
+                                            {% if change_request.targetdate > change_request.requiredbydate %}
+                                                Target Date is greater than the Required by Date.
+                                            {% else %}
+                                                An Assoicated Feature's target date is greater than the Target Date.
+                                            {% endif %}
+                                        {% else %}
+                                            ""
+                                        {% endif %}
+                                        ">
+                                            {{ change_request.targetdate|date:"m/d/y"|default:"" }}
+                                        </span>
+                                    </td>
                                     <td class="text-center"><span class="badge text-bg-light">{{ change_request.highlevelestimate|floatformat:0 }}</span></td>
                                     <td class="text-center"><span class="badge text-bg-light">{{ change_request.tt_workdescription}}</span></td>
                                 </tr>
                                 {% if change_request.features.all %}
                                 <tr id="features-{{ change_request.id }}" class="hidden">
-                                    <td colspan="14">
+                                    <td colspan="15">
                                         <table>
-                                            <thead style="position: sticky; top: 0; z-index: 1000" class="table-info text-center">
+                                            <thead class="table-info text-center";"nested-header">
                                                 <tr>
                                                     <th>+/-</th>
                                                     <th># Children</th>
@@ -255,7 +371,23 @@
                                                     </td>
                                                     <td class="text-center"><span class="badge text-bg-light">{{ feature.tt_initiative }}</span></td>
                                                     <td class="text-center"><span class="badge text-bg-light">{{ feature.startdate|date:"m/d/y"|default:"" }}</span></td>
-                                                    <td class="text-center"><span class="badge text-bg-light">{{ feature.targetdate|date:"m/d/y"|default:"" }}</span></td>
+                                                    <td class="text-center">
+                                                        <span class="badge
+                                                            {% if feature|is_feature_targetdate_warning:change_request %}
+                                                                text-bg-danger
+                                                            {% else %}
+                                                                text-bg-light
+                                                            {% endif %}
+                                                        "
+                                                        data-tooltip="{% if feature|is_feature_targetdate_warning:change_request %}
+                                                            Target Date is greater than the associated Work Item's Target Date.
+                                                        {% else %}
+                                                            No issues detected.
+                                                        {% endif %}
+                                                        ">
+                                                            {{ feature.targetdate|date:"m/d/y"|default:"" }}
+                                                        </span>
+                                                    </td>
                                                     <td class="text-center"><span class="badge text-bg-light">{{ feature.highlevelestimate|floatformat:0  }}</span></td>
                                                     <td class="text-left"><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
                                                 </tr>
@@ -263,7 +395,7 @@
                                                 <tr id="userstories-{{ feature.id }}" class="hidden">
                                                     <td colspan="14">
                                                         <table>
-                                                            <thead style="position: sticky; top: 0; z-index: 1000" class="table-warning text-center">
+                                                            <thead class="table-warning text-center">
                                                                 <tr>
                                                                     <th>ID</th>
                                                                     <th>User Story Title</th>
