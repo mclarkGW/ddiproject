@@ -43,10 +43,28 @@
             background-color: white;
             border-bottom: 1px solid #ddd; /* Optional: Add a border for separation */
         }
+        /* Set the fixed width for the column */
+        .custom-titlewidth {
+            width: 350px; /* Fixed width for the column */
+            max-width: 350px; /* Prevents content from exceeding this width */
+            overflow: hidden; /* Ensures content doesn't overflow the cell */
+        }
+
+        /* Apply text wrapping and height constraints */
+        .custom-titletext {
+            display: block; /* Ensures the span behaves like a block element */
+            white-space: normal; /* Allows text to wrap to the next line */
+            overflow: hidden; /* Hides overflow content */
+            text-overflow: ellipsis; /* Adds "..." for overflowing text */
+            line-height: 1.2; /* Adjusts line spacing */
+            max-height: calc(1.2em * 2); /* Limits to 2 lines of text */
+            text-align: left;
+        }
         /* Higher z-index for expanded nested tables */
         .nested-header {
             z-index: 1;
             background-color: white; /* Optional: Ensure header is opaque */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add visual distinction */
         }
 
         .focused-header {
@@ -204,7 +222,15 @@
                         {% endif %}
                     </td>
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
-                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.currentphase }}</span></td>
+                    <td class="text-center">
+                        <span class="badge
+                            {% if initiative.currentphase == 'Phase1' %}text-bg-info
+                            {% elif initiative.currentphase == 'Phase2' %}text-bg-secondary
+                            {% else %}text-bg-light
+                            {% endif %}
+                            ">{{ initiative.currentphase }}
+                        </span>
+                    </td>
                 </tr>
                 {% if initiative.change_requests.all %}
                 <tr id="changerequests-{{ initiative.id }}" class="hidden">
@@ -254,7 +280,11 @@
                                             ">{{ change_request.workitemtype }}
                                         </span>
                                     </td>
-                                    <td><span class="badge text-bg-light">{{ change_request.title }}</span></td>
+                                    <td class="custom-titlewidth">
+                                        <span class="badge text-bg-light text-wrap custom-titletext">
+                                            {{ change_request.title }}
+                                        </span>
+                                    </td>
                                     <td class="text-center">
                                         <span class="badge
                                             {% if change_request.state == 'Funnel' %}text-bg-secondary
@@ -353,7 +383,11 @@
                                                         <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ feature.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ feature.id }}</a>
                                                         </span>
                                                     </td>
-                                                    <td><span class="badge text-bg-light">{{ feature.title }}</span></td>
+                                                    <td class="custom-titlewidth">
+                                                        <span class="badge text-bg-light text-wrap custom-titletext">
+                                                            {{ feature.title }}
+                                                        </span>
+                                                    </td>
                                                     <td class="text-center">
                                                         <span class="badge
                                                             {% if feature.state == 'Funnel' %}text-bg-secondary
@@ -411,7 +445,11 @@
                                                                         <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ user_story.id }}</a>
                                                                         </span>
                                                                     </td>
-                                                                    <td><span class="badge text-bg-light">{{ user_story.title }}</span></td>
+                                                                    <td class="custom-titlewidth">
+                                                                        <span class="badge text-bg-light text-wrap custom-titletext">
+                                                                            {{ user_story.title }}
+                                                                        </span>
+                                                                    </td>
                                                                     <td class="text-center">
                                                                         <span class="badge
                                                                             {% if user_story.state == 'New' %}text-bg-secondary

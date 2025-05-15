@@ -42,6 +42,7 @@ def dashboard_view(request):
 
     return render(request, 'dashboard.html', context)
 
+# Iteration View
 def iteration_view(request):
     # Last Refresh Date
     iteration_last_refreshed = Iteration.objects.first()
@@ -68,32 +69,7 @@ def iteration_view(request):
     }
     return render(request, 'iteration.html', context)
 
-def dashboard_view2(request):
-    # Last Refreshed
-    last_refreshed = LastRefreshed.objects.first()
-
-    # Initiatives with related Change Requests
-    initiatives = Initiative.objects.all() \
-        .prefetch_related(
-            'change_requests'
-        ) \
-        .order_by('title')
-
-    # Grouping initiatives by title or any other relevant property
-    grouped_initiatives = {}
-    for initiative in initiatives:
-        title = initiative.title
-        if title not in grouped_initiatives:
-            grouped_initiatives[title] = []
-        grouped_initiatives[title].append(initiative)
-
-    context = {
-        'grouped_initiatives': grouped_initiatives,
-        'last_refreshed': last_refreshed,
-    }
-
-    return render(request, 'dashboard2.html', context)
-
+# Fetch Iterations View
 def run_fetch_iterations(request):
     if request.method == "POST":
         try:
@@ -106,6 +82,7 @@ def run_fetch_iterations(request):
         # Render the HTML template for GET requests
         return render(request, "run_fetch_iterations.html")
 
+# Fetch Data View
 def run_fetch_data(request):
     if request.method == "POST":
         try:
