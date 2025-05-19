@@ -13,6 +13,11 @@ def strip_html(value):
 def orderby(queryset, field):
     return queryset.order_by(field)
 
+@register.filter
+def split(value, delimiter=';'):
+    if value:
+        return value.split(delimiter)
+    return []
 
 @register.filter
 def is_warning(change_request):

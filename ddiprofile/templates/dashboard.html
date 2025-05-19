@@ -60,6 +60,27 @@
             max-height: calc(1.2em * 2); /* Limits to 2 lines of text */
             text-align: left;
         }
+       
+        .custom-clientwidth {
+            width: 200px;
+            max-width: 200px;
+            overflow: hidden;
+            text-align: center;
+        }
+        .badge-client {
+            font-size: 0.6em;
+            padding: 1px 3px;
+            margin-right: 2px;
+            margin-bottom: 1px;
+            background-color: #6c757d;
+            color: #fff;
+            border-radius: 6px;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+            vertical-align: middle;
+            display: inline-block;
+            line-height: 1.2;
+        }
         /* Higher z-index for expanded nested tables */
         .nested-header {
             z-index: 1;
@@ -96,6 +117,10 @@
             z-index: 1000;
             opacity: 1;
             transition: opacity 0.3s;
+        }
+        .danger-focus:focus {
+            border-color: #dc3545 !important; /* Bootstrap danger */
+            box-shadow: 0 0 0 0.2rem rgba(220,53,69,0.25) !important;
         }
     </style>
     <script>
@@ -148,6 +173,43 @@
                 rect.right <= (window.innerWidth || document.documentElement.clientWidth)
             );
         }
+        // Filter function for state
+        function filterState(initiativeId) {
+        var filter = document.getElementById("stateFilter-" + initiativeId).value;
+        var rows = document.querySelectorAll("tr.cr-row-" + initiativeId);
+
+        // Define state groups for filtering
+        var inProgressStates = ['state-committed', 'state-in-progress', 'state-blocked'];
+        var proposedStates = ['state-funnel', 'state-reviewing', 'state-analyzing', 'state-backlog'];
+
+        rows.forEach(function(row) {
+            if (!filter || filter === "") {
+                // Show all
+                row.style.display = "";
+            } else if (filter === "Done") {
+                // Hide rows with state-done
+                if (row.classList.contains("state-done")) {
+                    row.style.display = "none";
+                } else {
+                    row.style.display = "";
+                }
+            } else if (filter === "In Progress") {
+                // Show only rows with a progress state
+                if (inProgressStates.some(cls => row.classList.contains(cls))) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            } else if (filter === "Proposed") {
+                // Show only rows with a proposed state
+                if (proposedStates.some(cls => row.classList.contains(cls))) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            }
+        });
+    }
     </script>
 </head>
 <body>
@@ -168,15 +230,17 @@
                     <th rowspan="2">Delivery Support Director</th>
                     <th rowspan="2">Start</th>
                     <th rowspan="2">Months</th>
-                    <th colspan="2" class="sub-header">SIT</th>
-                    <th colspan="2" class="sub-header">UAT</th>
+                    <th colspan="3" class="sub-header">SIT</th>
+                    <th colspan="3" class="sub-header">UAT</th>
                     <th rowspan="2">Go Live</th>
                     <th rowspan="2">Cur Phase</th>
                 </tr>
                 <tr>
                     <th class="table-primary">Start</th>
+                    <th class="table-primary">End</th>
                     <th class="table-primary">% Cmpl</th>
                     <th class="table-primary">Start</th>
+                    <th class="table-primary">End</th>
                     <th class="table-primary">% Cmpl</th>
                 </tr>
             </thead>
@@ -184,16 +248,15 @@
                 {% for initiative in initiatives %}
                 <tr>
                     <td class="expand-btn text-center" id="expand-btn-initiative-{{ initiative.id }}" onclick="toggleRow('changerequests-{{ initiative.id }}', 'expand-btn-initiative-{{ initiative.id }}')">
-                        {% if initiative.change_requests.all %}
+                        {% if initiative.change_requests.all|length %}
                             +
                         {% else %}
                             &nbsp;
                         {% endif %}
                     </td>
                     <td class="text-center">
-                        {% if initiative.change_requests.all %}
-                        <span class="badge text-bg-light">{{ initiative.change_requests.count }}</span>
-                        {% else %}
+                        {% if initiative.change_requests.all|length %}
+                            <span class="badge text-bg-light">{{ initiative.change_requests.all|length }}</span>
                         {% endif %}
                     </td>
                     <td class="text-center"><span class="badge text-bg-light">
@@ -208,6 +271,7 @@
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.sitend|date:"m/d/y"|default:""  }}</span></td>
                     <td>{% if initiative.sitcmpl %}
                         <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.sitcmpl }}%" aria-valuemin="0" aria-valuemax="100">
                             <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.sitcmpl }}%">{{ initiative.sitcmpl }}%</div>
@@ -215,6 +279,7 @@
                         {% endif %}
                     </td>
                     <td><span class="badge text-bg-light">{{ initiative.uatstart|date:"m/d/y"|default:""  }}</span></td>
+                    <td><span class="badge text-bg-light">{{ initiative.uatend|date:"m/d/y"|default:""  }}</span></td>
                     <td>{% if initiative.uatcmpl %}
                         <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.uatcmpl }}%" aria-valuemin="0" aria-valuemax="100">
                             <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.uatcmpl }}%">{{ initiative.uatcmpl }}%</div>
@@ -224,17 +289,34 @@
                     <td class="text-center"><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
                     <td class="text-center">
                         <span class="badge
-                            {% if initiative.currentphase == 'Phase1' %}text-bg-info
-                            {% elif initiative.currentphase == 'Phase2' %}text-bg-secondary
+                            {% if initiative.currentphase == '1. Pre-Start' %}text-bg-secondary
+                            {% elif initiative.currentphase == '2. RVS' %}text-bg-info
+                            {% elif initiative.currentphase == '3. Build' %}text-bg-info
+                            {% elif initiative.currentphase == '4. SIT' %}text-bg-info
+                            {% elif initiative.currentphase == '5. UAT' %}text-bg-info
+                            {% elif initiative.currentphase == '6. Pre Go-Live' %}text-bg-warning
+                            {% elif initiative.currentphase == '7. Production' %}text-bg-primary
                             {% else %}text-bg-light
                             {% endif %}
                             ">{{ initiative.currentphase }}
                         </span>
                     </td>
                 </tr>
-                {% if initiative.change_requests.all %}
+                {% if initiative.change_requests.all|length %}
                 <tr id="changerequests-{{ initiative.id }}" class="hidden">
-                    <td colspan="16">
+                    <td colspan="19">
+                        <div class="d-flex justify-content-center align-items-center my-1 px-2 rounded"
+                            style="background-color: #f8d7da; border: 1.5px solid #f5c6cb; box-shadow: 0 2px 8px 0 rgba(139,0,0,0.28); font-size: 0.85rem; min-height: 28px;">
+                            <i class="bi bi-funnel-fill text-secondary mr-2" style="font-size:1.2em;"></i>
+                            <label for="stateFilter-{{ initiative.id }}" class="mb-0 mr-2 font-weight-bold" style="font-size:0.90em;">Filter by State:</label>
+                            <select id="stateFilter-{{ initiative.id }}" class="form-control form-control-sm w-auto danger-focus" onchange="filterState({{ initiative.id }})" style="min-width: 110px; font-size:0.90em; height: 26px; padding: 1px 6px;">
+                                <option value="">Show All Items</option>
+                                <option value="Done">Hide Done Items</option>
+                                <option value="In Progress">Show In Progress Items</option>
+                                <option value="Proposed">Show Proposed Items</option>
+                                <!-- Add more states as needed -->
+                            </select>
+                        </div>
                         <table>
                             <thead class= "table-danger text-center";"nested-header">
                                 <tr>
@@ -242,6 +324,7 @@
                                     <th># Assoicated</th>
                                     <th>ID</th>
                                     <th>Type</th>
+                                    <th>All Clients</th>
                                     <th>Title</th>
                                     <th>State</th>
                                     <th>Submitted</th>
@@ -252,9 +335,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for change_request in initiative.change_requests.all|orderby:'tt_workdescription' %}
-                                <tr>
-                                    <td class="expand-btn text-center" id="expand-btn-cr-{{ change_request.id }}" onclick="toggleRow('features-{{ change_request.id }}', 'expand-btn-cr-{{ change_request.id }}')">
+                                {% for change_request in initiative.change_requests.all|dictsort:'tt_workdescription' %}
+                                <!-- associates the state with the row in order to be filtered -->
+                                <tr class="cr-row cr-row-{{ initiative.id }} state-{{ change_request.state|slugify }}">
+                                    <td class="expand-btn text-center" id="expand-btn-cr-{{ initiative.id }}-{{ change_request.id }}" onclick="toggleRow('features-{{ initiative.id }}-{{ change_request.id }}', 'expand-btn-cr-{{ initiative.id }}-{{ change_request.id }}')">
                                         {% if change_request.features.all %}
                                             +
                                         {% else %}
@@ -279,6 +363,13 @@
                                             {% endif %}
                                             ">{{ change_request.workitemtype }}
                                         </span>
+                                    </td>
+                                   <td class="custom-clientwidth">
+                                    {% for acct in change_request.clientaccounts|default:""|cut:" "|split:";" %}
+                                        {% if acct %}
+                                        <span class="badge-client">{{ acct }}</span>
+                                        {% endif %}
+                                    {% endfor %}
                                     </td>
                                     <td class="custom-titlewidth">
                                         <span class="badge text-bg-light text-wrap custom-titletext">
@@ -343,8 +434,8 @@
                                     <td class="text-center"><span class="badge text-bg-light">{{ change_request.tt_workdescription}}</span></td>
                                 </tr>
                                 {% if change_request.features.all %}
-                                <tr id="features-{{ change_request.id }}" class="hidden">
-                                    <td colspan="15">
+                                <tr id="features-{{ initiative.id }}-{{ change_request.id }}" class="hidden">
+                                    <td colspan="18">
                                         <table>
                                             <thead class="table-info text-center";"nested-header">
                                                 <tr>
@@ -364,7 +455,7 @@
                                             <tbody>
                                                 {% for feature in change_request.features.all %}
                                                 <tr>
-                                                    <td class="expand-btn text-center" id="expand-btn-feature-{{ feature.id }}" onclick="toggleRow('userstories-{{ feature.id }}', 'expand-btn-feature-{{ feature.id }}')">
+                                                    <td class="expand-btn text-center" id="expand-btn-feature-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}" onclick="toggleRow('userstories-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}', 'expand-btn-feature-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}')">
                                                         {% if feature.user_stories.all %}
                                                             +
                                                         {% else %}
@@ -426,8 +517,8 @@
                                                     <td class="text-left"><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
                                                 </tr>
                                                 {% if feature.user_stories.all %}
-                                                <tr id="userstories-{{ feature.id }}" class="hidden">
-                                                    <td colspan="14">
+                                                <tr id="userstories-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}" class="hidden">
+                                                    <td colspan="17">
                                                         <table>
                                                             <thead class="table-warning text-center">
                                                                 <tr>
