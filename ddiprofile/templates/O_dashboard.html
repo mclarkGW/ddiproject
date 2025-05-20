@@ -1,0 +1,609 @@
+Original Dashboard
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}DDI Dashboard{% endblock %}
+{% block page_title %}DDI Dashboard{% endblock %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 100%;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 4px;
+        }
+        th {
+            height: 30px;
+            font-size: small;
+            cursor: pointer;
+        }
+        thead {
+            position: sticky;
+            z-index: 1;
+            top: 56px !important;
+            background-color: white;
+            border-bottom: 1px solid #ddd; /* Optional: Add a border for separation */
+        }
+        /* Set the fixed width for the column */
+        .custom-titlewidth {
+            width: 350px; /* Fixed width for the column */
+            max-width: 350px; /* Prevents content from exceeding this width */
+            overflow: hidden; /* Ensures content doesn't overflow the cell */
+        }
+
+        /* Apply text wrapping and height constraints */
+        .custom-titletext {
+            display: block; /* Ensures the span behaves like a block element */
+            white-space: normal; /* Allows text to wrap to the next line */
+            overflow: hidden; /* Hides overflow content */
+            text-overflow: ellipsis; /* Adds "..." for overflowing text */
+            line-height: 1.2; /* Adjusts line spacing */
+            max-height: calc(1.2em * 2); /* Limits to 2 lines of text */
+            text-align: left;
+        }
+        .custom-relatedwidth {
+            width: 50px;
+            max-width: 50px;
+            overflow: hidden;
+            text-align: center;
+        }
+        .custom-clientwidth {
+            width: 200px;
+            max-width: 200px;
+            overflow: hidden;
+            text-align: center;
+        }
+        .badge-client {
+            font-size: 0.6em;
+            padding: 1px 3px;
+            margin-right: 2px;
+            margin-bottom: 1px;
+            background-color: #6c757d;
+            color: #fff;
+            border-radius: 6px;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+            vertical-align: middle;
+            display: inline-block;
+            line-height: 1.2;
+        }
+        /* Higher z-index for expanded nested tables */
+        .nested-header {
+            z-index: 1;
+            top: 66px !important;
+            background-color: white; /* Optional: Ensure header is opaque */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add visual distinction */
+        }
+
+        .focused-header {
+            z-index: 999; /* Ensure the focused table's header is on top */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add visual distinction */
+        }
+        .expand-btn {
+            cursor: pointer;
+            font-weight: bold;
+            width: 25px;
+            max-width: 25px;
+            overflow: hidden;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+        [data-tooltip] {
+            position: relative;
+            cursor: pointer;
+        }
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        .danger-focus:focus {
+            border-color: #dc3545 !important; /* Bootstrap danger */
+            box-shadow: 0 0 0 0.2rem rgba(220,53,69,0.25) !important;
+        }
+    </style>
+    <script>
+        function toggleRow(rowId, toggleId) {
+            var row = document.getElementById(rowId);
+            var expandBtn = document.getElementById(toggleId);
+
+            if (row.classList.contains('hidden')) {
+                // Show the row and update button
+                row.classList.remove('hidden');
+                expandBtn.innerHTML = '-';
+
+                // Set higher z-index for the nested table header
+                var nestedHeader = row.querySelector('thead');
+                if (nestedHeader) {
+                    nestedHeader.classList.add('focused-header');
+                }
+            } else {
+                // Hide the row and reset button
+                row.classList.add('hidden');
+                expandBtn.innerHTML = '+';
+
+                // Reset z-index for the nested table header
+                var nestedHeader = row.querySelector('thead');
+                if (nestedHeader) {
+                    nestedHeader.classList.remove('focused-header');
+                }
+            }
+        }
+
+        // Ensure only one header has the highest z-index at a time
+        window.addEventListener('scroll', function () {
+            var headers = document.querySelectorAll('thead');
+            headers.forEach(function (header) {
+                if (isElementInViewport(header)) {
+                    header.classList.add('focused-header');
+                } else {
+                    header.classList.remove('focused-header');
+                }
+            });
+        });
+
+        // Helper function to check if an element is in the viewport
+        function isElementInViewport(el) {
+            var rect = el.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        }
+        // Filter function for state
+        function filterState(initiativeId) {
+        var filter = document.getElementById("stateFilter-" + initiativeId).value;
+        var rows = document.querySelectorAll("tr.cr-row-" + initiativeId);
+
+        // Define state groups for filtering
+        var inProgressStates = ['state-committed', 'state-in-progress', 'state-blocked'];
+        var proposedStates = ['state-funnel', 'state-reviewing', 'state-analyzing', 'state-backlog'];
+        // Show/hide the "Filtered" badge
+        var badge = document.getElementById("filtered-badge-" + initiativeId);
+        if (filter && filter !== "") {
+            badge.style.display = "";
+        } else {
+            badge.style.display = "none";
+        }
+
+        rows.forEach(function(row) {
+            if (!filter || filter === "") {
+                // Show all
+                row.style.display = "";
+            } else if (filter === "Done") {
+                // Hide rows with state-done
+                if (row.classList.contains("state-done")) {
+                    row.style.display = "none";
+                } else {
+                    row.style.display = "";
+                }
+            } else if (filter === "In Progress") {
+                // Show only rows with a progress state
+                if (inProgressStates.some(cls => row.classList.contains(cls))) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            } else if (filter === "Proposed") {
+                // Show only rows with a proposed state
+                if (proposedStates.some(cls => row.classList.contains(cls))) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            }
+        });
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <br>
+        <table>
+            <thead class="table-success text-center">
+                <tr>
+                    <th rowspan="2">+/-</th>
+                    <th rowspan="2"># Related</th>
+                    <th rowspan="2">ID</th>
+                    <th rowspan="2">Deal</th>
+                    <th rowspan="2">Client Account</th>
+                    <th rowspan="2">Solution GTM</th>
+                    <th rowspan="2">Delivery Support Leader</th>
+                    <th rowspan="2">Delivery Support Senior Leader</th>
+                    <th rowspan="2">Delivery Support Director</th>
+                    <th rowspan="2">Start</th>
+                    <th rowspan="2">Months</th>
+                    <th colspan="3" class="sub-header">SIT</th>
+                    <th colspan="3" class="sub-header">UAT</th>
+                    <th rowspan="2">Go Live</th>
+                    <th rowspan="2">Cur Phase</th>
+                </tr>
+                <tr>
+                    <th class="table-primary">Start</th>
+                    <th class="table-primary">End</th>
+                    <th class="table-primary">% Cmpl</th>
+                    <th class="table-primary">Start</th>
+                    <th class="table-primary">End</th>
+                    <th class="table-primary">% Cmpl</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for initiative in initiatives %}
+                <tr>
+                    <td class="expand-btn text-center" id="expand-btn-initiative-{{ initiative.id }}" onclick="toggleRow('changerequests-{{ initiative.id }}', 'expand-btn-initiative-{{ initiative.id }}')">
+                        {% if initiative.change_requests.all|length %}
+                            +
+                        {% else %}
+                            &nbsp;
+                        {% endif %}
+                    </td>
+                    <td class="custom-relatedwidth text-center">
+                        {% if initiative.change_requests.all|length %}
+                            <span class="badge text-bg-light">{{ initiative.change_requests.all|length }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center"><span class="badge text-bg-light">
+                        <a href="https://dev.azure.com/PayerPortfolio/MES%20(Portfolio)/_workitems/edit/{{ initiative.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ initiative.id }}</a>
+                    </span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.title }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.clientaccounts }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.solutiongotomarket }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.deliverysupportleader }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.deliverysupportseniorleader }}</span></td>
+                    <td class="text-left"><span class="badge text-bg-light">{{ initiative.deliverysupportdirector }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.sitend|date:"m/d/y"|default:""  }}</span></td>
+                    <td>{% if initiative.sitcmpl %}
+                        <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.sitcmpl }}%" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.sitcmpl }}%">{{ initiative.sitcmpl }}%</div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge text-bg-light">{{ initiative.uatstart|date:"m/d/y"|default:""  }}</span></td>
+                    <td><span class="badge text-bg-light">{{ initiative.uatend|date:"m/d/y"|default:""  }}</span></td>
+                    <td>{% if initiative.uatcmpl %}
+                        <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.uatcmpl }}%" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.uatcmpl }}%">{{ initiative.uatcmpl }}%</div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="text-center"><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
+                    <td class="text-center">
+                        <span class="badge
+                            {% if initiative.currentphase == '1. Pre-Start' %}text-bg-secondary
+                            {% elif initiative.currentphase == '2. RVS' %}text-bg-info
+                            {% elif initiative.currentphase == '3. Build' %}text-bg-info
+                            {% elif initiative.currentphase == '4. SIT' %}text-bg-info
+                            {% elif initiative.currentphase == '5. UAT' %}text-bg-info
+                            {% elif initiative.currentphase == '6. Pre Go-Live' %}text-bg-warning
+                            {% elif initiative.currentphase == '7. Production' %}text-bg-primary
+                            {% else %}text-bg-light
+                            {% endif %}
+                            ">{{ initiative.currentphase }}
+                        </span>
+                    </td>
+                </tr>
+                {% if initiative.change_requests.all|length %}
+                <tr id="changerequests-{{ initiative.id }}" class="hidden">
+                    <td colspan="19">
+                        <div class="d-flex justify-content-center align-items-center my-1 px-2 rounded"
+                            style="background-color: #f8d7da; border: 1.5px solid #f5c6cb; box-shadow: 0 2px 8px 0 rgba(139,0,0,0.28); font-size: 0.85rem; min-height: 28px;">
+                            <i class="bi bi-funnel-fill text-secondary mr-2" style="font-size:1.2em;"></i>
+                            <label for="stateFilter-{{ initiative.id }}" class="mb-0 mr-2 font-weight-bold" style="font-size:0.90em;">Filter by State:</label>
+                            <select id="stateFilter-{{ initiative.id }}" class="form-control form-control-sm w-auto danger-focus" onchange="filterState({{ initiative.id }})" style="min-width: 110px; font-size:0.90em; height: 26px; padding: 1px 6px;">
+                                <option value="">Show All Items</option>
+                                <option value="Done">Hide Done Items</option>
+                                <option value="In Progress">Show In Progress Items</option>
+                                <option value="Proposed">Show Proposed Items</option>
+                                <!-- Add more states as needed -->
+                            </select>
+                            <span id="filtered-badge-{{ initiative.id }}" class="badge badge-info ml-2" style="display:none; font-size:0.8em; background-color:#17a2b8;">
+                                Filtered
+                            </span>
+                        </div>
+                        <table>
+                            <thead class= "table-danger text-center";"nested-header">
+                                <tr>
+                                    <th>+/-</th>
+                                    <th># Assoicated</th>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>All Clients</th>
+                                    <th>Title</th>
+                                    <th>State</th>
+                                    <th>Submitted</th>
+                                    <th>Required By</th>
+                                    <th>Target</th>
+                                    <th>HL Estimate</th>
+                                    <th>Contract ID #</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for change_request in initiative.change_requests.all|dictsort:'tt_workdescription' %}
+                                <!-- associates the state with the row in order to be filtered -->
+                                <tr class="cr-row cr-row-{{ initiative.id }} state-{{ change_request.state|slugify }}">
+                                    <td class="expand-btn text-center" id="expand-btn-cr-{{ initiative.id }}-{{ change_request.id }}" onclick="toggleRow('features-{{ initiative.id }}-{{ change_request.id }}', 'expand-btn-cr-{{ initiative.id }}-{{ change_request.id }}')">
+                                        {% if change_request.features.all %}
+                                            +
+                                        {% else %}
+                                            &nbsp;
+                                        {% endif %}
+                                    </td>
+                                    <td class="custom-relatedwidth text-center">
+                                        {% if change_request.features.all %}
+                                        <span class="badge text-bg-light">{{ change_request.features.count }}</span>
+                                        {% else %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center"><span class="badge text-bg-light">
+                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ change_request.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ change_request.id }}</a>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge
+                                            {% if change_request.workitemtype == 'Change Request' %}text-bg-danger
+                                            {% elif change_request.workitemtype == 'GAP' %}text-bg-primary
+                                            {% else %}text-bg-light
+                                            {% endif %}
+                                            ">{{ change_request.workitemtype }}
+                                        </span>
+                                    </td>
+                                   <td class="custom-clientwidth">
+                                    {% for acct in change_request.clientaccounts|default:""|cut:" "|split:";" %}
+                                        {% if acct %}
+                                        <span class="badge-client">{{ acct }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </td>
+                                    <td class="custom-titlewidth">
+                                        <span class="badge text-bg-light text-wrap custom-titletext">
+                                            {{ change_request.title }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge
+                                            {% if change_request.state == 'Funnel' %}text-bg-secondary
+                                            {% elif change_request.state == 'Reviewing' %}text-bg-secondary
+                                            {% elif change_request.state == 'Analyzing' %}text-bg-secondary
+                                            {% elif change_request.state == 'Backlog' %}text-bg-info
+                                            {% elif change_request.state == 'Committed' %}text-bg-info
+                                            {% elif change_request.state == 'In Progress' %}text-bg-warning
+                                            {% elif change_request.state == 'BLOCKED' %}text-bg-danger
+                                            {% elif change_request.state == 'Done' %}text-bg-primary
+                                            {% else %}text-bg-light
+                                            {% endif %}
+                                            ">{{ change_request.state }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.createddate|date:"m/d/y"|default:""  }}</span></td>
+                                    <td class="text-center">
+                                        <span class="badge
+                                            {% if change_request|is_warning %}
+                                                text-bg-warning
+                                            {% else %}
+                                                text-bg-light
+                                            {% endif %}
+                                            "
+                                            data-tooltip="{% if change_request|is_warning %}
+                                                Required By Date is not null AND Target Date is null and Submitted Date is more than 14 days ago.
+                                            {% else %}
+                                                ""
+                                            {% endif %}
+                                        ">
+                                            {{ change_request.requiredbydate|date:"m/d/y"|default:"" }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge
+                                            {% if change_request|is_targetdate_warning %}
+                                                text-bg-danger
+                                            {% else %}
+                                                text-bg-light
+                                            {% endif %}
+                                        "
+                                        data-tooltip="{% if change_request|is_targetdate_warning %}
+                                            {% if change_request.targetdate > change_request.requiredbydate %}
+                                                Target Date is greater than the Required by Date.
+                                            {% else %}
+                                                An Assoicated Feature's target date is greater than the Target Date.
+                                            {% endif %}
+                                        {% else %}
+                                            ""
+                                        {% endif %}
+                                        ">
+                                            {{ change_request.targetdate|date:"m/d/y"|default:"" }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.highlevelestimate|floatformat:0 }}</span></td>
+                                    <td class="text-center"><span class="badge text-bg-light">{{ change_request.tt_workdescription}}</span></td>
+                                </tr>
+                                {% if change_request.features.all %}
+                                <tr id="features-{{ initiative.id }}-{{ change_request.id }}" class="hidden">
+                                    <td colspan="18">
+                                        <table>
+                                            <thead class="table-info text-center";"nested-header">
+                                                <tr>
+                                                    <th>+/-</th>
+                                                    <th># Children</th>
+                                                    <th>Contract ID</th>
+                                                    <th>ID</th>
+                                                    <th>Feature Title</th>
+                                                    <th>State</th>
+                                                    <th>Module</th>
+                                                    <th>Start Date</th>
+                                                    <th>Target Date</th>
+                                                    <th>HL Estimate</th>
+                                                    <th>Iteration Path</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for feature in change_request.features.all %}
+                                                <tr>
+                                                    <td class="expand-btn text-center" id="expand-btn-feature-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}" onclick="toggleRow('userstories-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}', 'expand-btn-feature-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}')">
+                                                        {% if feature.user_stories.all %}
+                                                            +
+                                                        {% else %}
+                                                            &nbsp;
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="custom-relatedwidth text-center">
+                                                        {% if feature.user_stories.all %}
+                                                            <span class="badge text-bg-light">{{ feature.user_stories.count }}
+                                                            </span>
+                                                        {% else %}
+                                                        {% endif %}
+                                                    </td>
+                                                    <td><span class="badge text-bg-light">{{ feature.tt_workdescription }}</span></td>
+                                                    <td class="text-center"><span class="badge text-bg-light">
+                                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ feature.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ feature.id }}</a>
+                                                        </span>
+                                                    </td>
+                                                    <td class="custom-titlewidth">
+                                                        <span class="badge text-bg-light text-wrap custom-titletext">
+                                                            {{ feature.title }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge
+                                                            {% if feature.state == 'Funnel' %}text-bg-secondary
+                                                            {% elif feature.state == 'Reviewing' %}text-bg-secondary
+                                                            {% elif feature.state == 'Analyzing' %}text-bg-secondary
+                                                            {% elif feature.state == 'Backlog' %}text-bg-info
+                                                            {% elif feature.state == 'Committed' %}text-bg-info
+                                                            {% elif feature.state == 'In Progress' %}text-bg-warning
+                                                            {% elif feature.state == 'BLOCKED' %}text-bg-danger
+                                                            {% elif feature.state == 'Done' %}text-bg-primary
+                                                            {% else %}text-bg-light
+                                                            {% endif %}
+                                                            ">{{ feature.state }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center"><span class="badge text-bg-light">{{ feature.tt_initiative }}</span></td>
+                                                    <td class="text-center"><span class="badge text-bg-light">{{ feature.startdate|date:"m/d/y"|default:"" }}</span></td>
+                                                    <td class="text-center">
+                                                        <span class="badge
+                                                            {% if feature|is_feature_targetdate_warning:change_request %}
+                                                                text-bg-danger
+                                                            {% else %}
+                                                                text-bg-light
+                                                            {% endif %}
+                                                        "
+                                                        data-tooltip="{% if feature|is_feature_targetdate_warning:change_request %}
+                                                            Target Date is greater than the associated Work Item's Target Date.
+                                                        {% else %}
+                                                            No issues detected.
+                                                        {% endif %}
+                                                        ">
+                                                            {{ feature.targetdate|date:"m/d/y"|default:"" }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center"><span class="badge text-bg-light">{{ feature.highlevelestimate|floatformat:0  }}</span></td>
+                                                    <td class="text-left"><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
+                                                </tr>
+                                                {% if feature.user_stories.all %}
+                                                <tr id="userstories-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}" class="hidden">
+                                                    <td colspan="17">
+                                                        <table>
+                                                            <thead class="table-warning text-center">
+                                                                <tr>
+                                                                    <th>ID</th>
+                                                                    <th>User Story Title</th>
+                                                                    <th>State</th>
+                                                                    <th>Story Points</th>
+                                                                    <th>Iteration Path</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for user_story in feature.user_stories.all %}
+                                                                <tr>
+                                                                    <td class="text-center"><span class="badge text-bg-light">
+                                                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ user_story.id }}</a>
+                                                                        </span>
+                                                                    </td>
+                                                                    <td class="custom-titlewidth">
+                                                                        <span class="badge text-bg-light text-wrap custom-titletext">
+                                                                            {{ user_story.title }}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        <span class="badge
+                                                                            {% if user_story.state == 'New' %}text-bg-secondary
+                                                                            {% elif user_story.state == 'Backlog' %}text-bg-info
+                                                                            {% elif user_story.state == 'Ready' %}text-bg-info
+                                                                            {% elif user_story.state == 'In Progress' %}text-bg-warning
+                                                                            {% elif user_story.state == 'Test' %}text-bg-info
+                                                                            {% elif user_story.state == 'BLOCKED' %}text-bg-danger
+                                                                            {% elif user_story.state == 'Done' %}text-bg-primary
+                                                                            {% else %}text-bg-light
+                                                                            {% endif %}
+                                                                            ">{{ user_story.state }}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td class="text-center"><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0  }}</span></td>
+                                                                    <td class="text-left"><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
+                                                                </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                                {% endif %}
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="container" style="text-align: center; padding: 10px;">
+            <span class="badge text-bg-primary">Last Refreshed: </span>
+            <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ last_refreshed.title }} EST</span>
+        </div>
+    </div>
+</body>
+{% endblock %}
