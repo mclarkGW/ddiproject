@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import dashboard_view
+from .views import dashboard_view, cr_charts_view
 
 
 urlpatterns = [
@@ -15,4 +15,6 @@ urlpatterns = [
     path('run-fetch-data/', views.run_fetch_data, name='run_fetch_data'),
 # URL for CR Dashboard
     path('crdashboard/', views.cr_dashboard_view, name='crdashboard'),
+# URL for CR Charts
+    path('crcharts/', cr_charts_view, name='crcharts'),
 ]

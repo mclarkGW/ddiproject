@@ -1,4 +1,4 @@
-from django.db.models import Sum, F, FloatField
+from django.db.models import Sum, F, FloatField, Count
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crEpic, crChangeRequest, crFeature, crUserStory, crLastRefreshed
 from datetime import datetime, date
@@ -9,6 +9,7 @@ import requests
 import base64
 import json
 from itertools import groupby
+from collections import Counter
 
 
 def index(request):
@@ -138,11 +139,11 @@ def cr_dashboard_view(request):
                 total_planned += storypoints * 8
                 # Done/Active/New
                 if state == "done":
-                    total_done += storypoints * 8
+                    total_done += storypoints
                 elif state in ("ready", "in progress", "test", "blocked"):
-                    total_active += storypoints * 8
+                    total_active += storypoints
                 elif state in ("new", "backlog"):
-                    total_new += storypoints * 8
+                    total_new += storypoints
 
                 # PI Start/End per Feature
                 iteration_path = getattr(user_story, "iterationpath", None)
@@ -175,6 +176,13 @@ def cr_dashboard_view(request):
         change_request.total_new = total_new
         change_request.pi_start = cr_pi_start
         change_request.pi_end = cr_pi_end
+        change_request.total_sp = total_done + total_active + total_new  # Total story points (in "hours") as sum of all states
+
+        # Progress percentage for progress bar
+        if change_request.total_sp > 0:
+            change_request.percent_done = int(round((change_request.total_done / change_request.total_sp) * 100))
+        else:
+            change_request.percent_done = 0
 
         # +/- Target Date calculation (CR level)
         target = getattr(change_request, 'targetdate', None)
@@ -182,11 +190,11 @@ def cr_dashboard_view(request):
         if target and pi_end:
             days_diff = (target - pi_end).days
             if days_diff > 0:
-                change_request.target_vs_pi = f'+{days_diff} Days'
+                change_request.target_vs_pi = f'+{days_diff}'
             elif days_diff < 0:
-                change_request.target_vs_pi = f'{days_diff} Days'
+                change_request.target_vs_pi = f'{days_diff}'
             else:
-                change_request.target_vs_pi = '0 Days'
+                change_request.target_vs_pi = '0'
         else:
             change_request.target_vs_pi = ''
 
@@ -195,3 +203,63 @@ def cr_dashboard_view(request):
         'cr': cr,
     }
     return render(request, 'crdashboard.html', context)
+
+# CR Charts View
+def cr_charts_view(request):
+    crs = crChangeRequest.objects.prefetch_related('features', 'features__user_stories')
+
+    # RELEASE aggregation (already correct)
+    last_release_list = []
+    for cr in crs:
+        all_userstory_releases = []
+        for feature in cr.features.all():
+            for user_story in feature.user_stories.all():
+                userstory_release = getattr(user_story, "iterationpath", None)
+                if userstory_release:
+                    if "\\" in userstory_release:
+                        userstory_release = userstory_release.split("\\", 1)[1]
+                    all_userstory_releases.append(userstory_release)
+        last_release = max(all_userstory_releases) if all_userstory_releases else None
+        last_release_list.append(last_release if last_release else '(blank)')
+    release_counter = Counter(last_release_list)
+    sorted_release_items = sorted(release_counter.items(), key=lambda x: x[0])
+    release_labels = [item[0] for item in sorted_release_items]
+    release_data = [item[1] for item in sorted_release_items]
+
+    # ACCOUNT aggregation (fix here)
+    account_list = []
+    for cr in crs:
+        account = getattr(cr, 'clientaccounts', None)
+        account_list.append(account if account else '(blank)')
+    account_counter = Counter(account_list)
+    sorted_account_items = sorted(account_counter.items(), key=lambda x: (x[0] == '(blank)', x[0]))
+    account_labels = [item[0] for item in sorted_account_items]
+    account_data = [item[1] for item in sorted_account_items]
+
+    # STATUS aggregation (custom order)
+    status_order = [
+        'Funnel', 'Reviewing', 'Analyzing', 'Backlog',
+        'Committed', 'In Progress', 'BLOCKED', 'Done'
+    ]
+    order_map = {name.lower(): i for i, name in enumerate(status_order)}
+    status_list = []
+    for cr in crs:
+        status = getattr(cr, 'state', None)
+        status_list.append(status if status else '(blank)')
+    status_counter = Counter(status_list)
+    sorted_status_items = sorted(
+        status_counter.items(),
+        key=lambda x: order_map.get(str(x[0]).strip().lower(), len(order_map))
+    )
+    status_labels = [item[0] for item in sorted_status_items]
+    status_data = [item[1] for item in sorted_status_items]
+
+    context = {
+        'release_labels': json.dumps(release_labels),
+        'release_data': json.dumps(release_data),
+        'account_labels': json.dumps(account_labels),
+        'account_data': json.dumps(account_data),
+        'status_labels': json.dumps(status_labels),
+        'status_data': json.dumps(status_data),
+    }
+    return render(request, 'cr_charts.html', context)

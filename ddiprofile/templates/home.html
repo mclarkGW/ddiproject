@@ -3,12 +3,99 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-    <h1>Welcome to Dashboard Management</h1>
+<style>
+    .cr-dash-header {
+        text-align: center;
+        font-size: 3rem;
+        font-weight: 800;
+        color: #29343b;
+        margin-top: 2.5rem;
+        margin-bottom: 1.2rem;
+        letter-spacing: 1.5px;
+        border-bottom: 4px solid #1dc7b2;
+        display: inline-block;
+        padding-bottom: 0.4rem;
+        box-shadow: 0 6px 12px -10px #1dc7b2;
+    }
+    .cr-dash-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        margin-left: 0.5rem;
+    }
+    .cr-dash-btn {
+        padding: 10px 22px;
+        font-size: 1.1em;
+        background: #17a2b8;
+        color: white;
+        border: none;
+        border-radius: 7px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 8px 0 rgba(23,162,184,0.11);
+        transition: background 0.15s;
+        text-decoration: none;
+    }
+    .cr-dash-btn:hover {
+        background: #138496;
+        color: #fff;
+    }
+    .cr-dash-filter-area {
+        background: #eafaf4;
+        border: 1.5px solid #17a2b8;
+        border-radius: 8px;
+        padding: 0.75rem 1.2rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.1rem;
+        width: 750px;
+    }
+    .cr-dash-filter-label {
+        font-weight: 700;
+        color: #106e6e;
+        font-size: 1.07em;
+        margin-right: 0.7em;
+    }
+    .cr-dash-filter-dropdown {
+        min-width: 130px;
+        font-size: 1em;
+        padding: 6px 12px;
+        border-radius: 4px;
+        border: 1px solid #17a2b8;
+        background: #fff;
+        color: #29343b;
+        transition: border 0.15s;
+    }
+    .cr-dash-filter-dropdown:focus {
+        border-color: #138496;
+        outline: none;
+    }
+</style>
 
-    <b>Select which dashboard you would like to review.....</b>
+    <div class="cr-dash-header">Welcome to Dashboard Management</div>
     <br>
-    <a href="{% url 'dashboard' %}" class="btn btn-primary">DDI Dashboard</a>
-    <a href="{% url 'crdashboard' %}" class="btn btn-primary">CR Dashboard</a>
-
-
+        <b>Select which dashboard you would like to review.....</b>
+    <br>
+    <br>
+        <div class="cr-dash-toolbar">
+            <a href="{% url 'dashboard' %}" style="text-decoration: none;">
+                <button class="cr-dash-btn">
+                    <i class="bi bi-clipboard-data" style="font-size: 1.2em; margin-right: 6px;"></i>
+                    DDI Dashboard
+                </button>
+            </a>
+            <span>  </span>
+            <a href="{% url 'crdashboard' %}" style="text-decoration: none;">
+                <button class="cr-dash-btn">
+                    <i class="bi bi-bar-chart-steps" style="font-size: 1.2em; margin-right: 6px;"></i>
+                    CR Dashboard
+                </button>
+            </a>
+        </div>
+        <br>
 {% endblock %}

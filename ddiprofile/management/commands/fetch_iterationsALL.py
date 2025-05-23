@@ -6,9 +6,9 @@ from ddiprofile.models import Iteration
 
 
 # Azure DevOps settings
-ORGANIZATION = 'payerportfolio'  # Replace with your Azure DevOps organization name
-PROJECT = 'USHC_AMER_US_ADU_HSP_Ua3'  # Replace with your Azure DevOps project name
-PAT = 'CByqSGDnGCIxr6qgEBSdxWspYW2Yuuvgq5cdqdlliShNDKYtOnE3JQQJ99BCACAAAAA85jZPAAASAZDO474U'  # Replace with your Azure DevOps PAT
+ORGANIZATION = 'payerportfolio'
+PROJECT = 'USHC_AMER_US_ADU_HSP_Ua3'
+PAT = 'CByqSGDnGCIxr6qgEBSdxWspYW2Yuuvgq5cdqdlliShNDKYtOnE3JQQJ99BCACAAAAA85jZPAAASAZDO474U'
 API_VERSION = "7.0"
 BASE_URL = f"https://dev.azure.com/{ORGANIZATION}/{PROJECT}/_apis/wit/classificationnodes/iterations?$depth=3&api-version={API_VERSION}"
 
