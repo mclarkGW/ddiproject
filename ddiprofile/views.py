@@ -1,7 +1,7 @@
 from django.db.models import Sum, F, FloatField
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Initiative,ChangeRequest,LastRefreshed, Iteration
-from datetime import datetime
+from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crEpic, crChangeRequest, crFeature, crUserStory, crLastRefreshed
+from datetime import datetime, date
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.http import JsonResponse
@@ -13,6 +13,10 @@ from itertools import groupby
 
 def index(request):
     return render(request, 'index.html')
+
+# Home View
+def home(request):
+    return render(request, 'home.html')
 
 # DDI Dashboard View
 def dashboard_view(request):
@@ -94,3 +98,100 @@ def run_fetch_data(request):
     else:
         # Render the HTML template for GET requests
         return render(request, "run_fetch_data.html")
+    
+# CR Dashboard View
+def cr_dashboard_view(request):
+    last_refreshed = crLastRefreshed.objects.first()
+    # Prefetch features and their user stories for optimized queries
+    cr = crChangeRequest.objects.all() \
+        .prefetch_related(
+            'features',
+            'features__user_stories'
+        ) \
+        .order_by('clientaccounts')
+
+    for change_request in cr:
+        # 1. Story Point Rollups
+        total_planned = 0
+        total_done = 0
+        total_active = 0
+        total_new = 0
+
+        # 2. PI Start/End across all features (for CR)
+        cr_pi_start = None
+        cr_pi_end = None
+
+        for feature in change_request.features.all():
+            # 3. PI Start/End for Feature
+            pi_start = None
+            pi_end = None
+
+            for user_story in feature.user_stories.all():
+                # Story Points Rollup
+                try:
+                    storypoints = float(user_story.storypoints)
+                except (ValueError, TypeError):
+                    storypoints = 0
+
+                state = getattr(user_story, "state", "").strip().lower()
+                # Planned (all user stories)
+                total_planned += storypoints * 8
+                # Done/Active/New
+                if state == "done":
+                    total_done += storypoints * 8
+                elif state in ("ready", "in progress", "test", "blocked"):
+                    total_active += storypoints * 8
+                elif state in ("new", "backlog"):
+                    total_new += storypoints * 8
+
+                # PI Start/End per Feature
+                iteration_path = getattr(user_story, "iterationpath", None)
+                if iteration_path:
+                    try:
+                        iteration = Iteration.objects.get(path=iteration_path)
+                        if not pi_start or (iteration.start_date and iteration.start_date < pi_start):
+                            pi_start = iteration.start_date
+                        if not pi_end or (iteration.finish_date and iteration.finish_date > pi_end):
+                            pi_end = iteration.finish_date
+                    except Iteration.DoesNotExist:
+                        pass
+
+            # Attach feature-level PI dates if you want them on the feature:
+            feature.pi_start = pi_start
+            feature.pi_end = pi_end
+
+            # CR-level PI dates: accumulate across all features
+            if pi_start:
+                if not cr_pi_start or pi_start < cr_pi_start:
+                    cr_pi_start = pi_start
+            if pi_end:
+                if not cr_pi_end or pi_end > cr_pi_end:
+                    cr_pi_end = pi_end
+
+        # Attach rollups to the CR
+        change_request.total_planned = total_planned
+        change_request.total_done = total_done
+        change_request.total_active = total_active
+        change_request.total_new = total_new
+        change_request.pi_start = cr_pi_start
+        change_request.pi_end = cr_pi_end
+
+        # +/- Target Date calculation (CR level)
+        target = getattr(change_request, 'targetdate', None)
+        pi_end = cr_pi_end
+        if target and pi_end:
+            days_diff = (target - pi_end).days
+            if days_diff > 0:
+                change_request.target_vs_pi = f'+{days_diff} Days'
+            elif days_diff < 0:
+                change_request.target_vs_pi = f'{days_diff} Days'
+            else:
+                change_request.target_vs_pi = '0 Days'
+        else:
+            change_request.target_vs_pi = ''
+
+    context = {
+        'last_refreshed': last_refreshed,
+        'cr': cr,
+    }
+    return render(request, 'crdashboard.html', context)

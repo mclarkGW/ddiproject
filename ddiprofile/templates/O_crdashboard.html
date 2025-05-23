@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}CR Dashboard{% endblock %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            padding: 5px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 2px;
+        }
+        th {
+            height: 25px;
+            font-size: small;
+            cursor: pointer;
+        }
+        td {
+            font-size: medium;
+        }
+        .hidden {
+            display: none;
+        }
+        .expand-btn {
+            cursor: pointer;
+            color: blue;
+            font-weight: bold;
+        }
+        .epics-table {
+            margin-left: 20px;
+            width: 95%;
+        }
+        .user-stories-table {
+            margin-left: 40px;
+            width: 90%;
+        }
+    </style>
+    <script>
+        function toggleFeatures(crId) {
+            var featuresRow = document.getElementById('features-' + crId);
+            var expandBtn = document.getElementById('expand-btn-' + crId);
+            if (featuresRow.classList.contains('hidden')) {
+                featuresRow.classList.remove('hidden');
+                expandBtn.innerHTML = '-';
+            } else {
+                featuresRow.classList.add('hidden');
+                expandBtn.innerHTML = '+';
+            }
+        }
+
+        function toggleUserStories(featureId) {
+            var userStoriesRow = document.getElementById('user-stories-' + featureId);
+            var expandBtn = document.getElementById('user-expand-btn-' + featureId);
+            if (userStoriesRow.classList.contains('hidden')) {
+                userStoriesRow.classList.remove('hidden');
+                expandBtn.innerHTML = '-';
+            } else {
+                userStoriesRow.classList.add('hidden');
+                expandBtn.innerHTML = '+';
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Change Request Dashboard</h1>
+        <br>
+        <table class="table-striped-columns">
+            <thead class="table-success text-center" style="position: sticky; top: 0; z-index: 1000;">
+            <tr>
+                <th colspan="16">Change Request</th>
+            </tr>
+            <tr>
+                    <th rowspan="2">+/-</th>
+                    <th rowspan="2">Associated #</th>
+                    <th rowspan="2">Contract ID</th>
+                    <th rowspan="2">ID</th>
+                    <th rowspan="2">Title</th>
+                    <th rowspan="2">State</th>
+                    <th rowspan="2">Client Accounts</th>
+                    <th rowspan="2">Modules</th>
+                    <th colspan="2" class="sub-header">Schedule</th>
+                    <th colspan="3" class="sub-header">% Effort</th>
+                    <th colspan="2" class="sub-header">% Done</th>
+                    <th rowspan="2">Progress</th>
+                </tr>
+                <tr class="table-primary text-center">
+                    <th>Target</th>
+                    <th>Planned</th>
+                    <th>Estimate</th>
+                    <th>Planned</th>
+                    <th>Actual</th>
+                    <th>ADO</th>
+                    <th>CATS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cr in cr %}
+                <tr>
+                    <td class="expand-btn" id="expand-btn-{{ cr.id }}" onclick="toggleFeatures({{ cr.id }})">
+                        {% if cr.features.all %}
+                            +
+                        {% else %}
+                            &nbsp;
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if cr.features.all %}
+                        <span class="badge text-bg-light">{{ cr.features.count }}</span>
+                        {% else %}
+                        {% endif %}
+                    </td>
+                    <td><span class="badge text-bg-light">{{ cr.clientaccounts }}</span></td>
+                    <td><span class="badge text-bg-light">{{ cr.tt_workdescription }}</span></td>
+                    <td class="text-left">
+                        <span class="badge text-bg-light">
+                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ cr.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ cr.id }}</a>
+                        </span>
+                    </td>
+                    <td><span class="badge text-bg-light">{{ cr.title }}</span></td>
+                    <td><span class="badge text-bg-light">{{ cr.state }}</span></td>
+                    <td><span class="badge text-bg-light">{{ cr.tt_initiative }}</span></td>
+                    <td><span class="badge text-bg-light">{{ cr.targetdate|date:"m/d/y"|default:"" }}</span></td>
+                    <td><span class="badge text-bg-light">Planned</span></td>
+                    <td><span class="badge text-bg-light">{{ cr.highlevelestimate|default:""|floatformat:0 }}</span></td>
+                    <td><span class="badge text-bg-light">{{ cr.total_planned|default:""|floatformat:0 }}</span></td>
+                    <td><span class="badge text-bg-light">Actual</span></td>
+                    <td><span class="badge text-bg-light">ADO</span></td>
+                    <td><span class="badge text-bg-light">CATS</span></td>
+                    <td>
+                        <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:50%">50%</div>
+                        </div>
+                    </td>
+                </tr>
+                {% if cr.features.all %}
+                <tr id="features-{{ cr.id }}" class="hidden">
+                    <td colspan="16">
+                        <table class="table-striped-columns">
+                            <thead style="position: sticky; top: 0; z-index: 1000;">
+                            <tr>
+                                <th colspan="11" class="table-danger text-center">Associated Features</th>
+                            </tr>
+                            <tr>
+                                    <th class="table-danger text-center">+/-</th>
+                                    <th class="table-danger text-center"> Children #</th>
+                                    <th class="table-danger text-center">Contract ID#</th>
+                                    <th class="table-danger text-center">ID</th>
+                                    <th class="table-danger text-center">Title</th>
+                                    <th class="table-danger text-center">State</th>
+                                    <th class="table-danger text-center">Module</th>
+                                    <th class="table-danger text-center">Start Date</th>
+                                    <th class="table-danger text-center">Target Date</th>
+                                    <th class="table-danger text-center">Area Path</th>
+                                    <th class="table-danger text-center">Iteration Path</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for feature in cr.features.all %}
+                                <tr>
+                                    <td class="expand-btn" id="user-expand-btn-{{ feature.id }}" onclick="toggleUserStories({{ feature.id }})">
+                                        {% if feature.user_stories.all %}
+                                            +
+                                        {% else %}
+                                            &nbsp;
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if feature.user_stories.all %}
+                                        <span class="badge text-bg-light">{{ feature.user_stories.count }}</span>
+                                        {% else %}
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge text-bg-light">{{ feature.tt_workdescription }}</span></td>
+                                    <td class="text-left">
+                                        <span class="badge text-bg-light">
+                                            <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ feature.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ feature.id }}</a>
+                                        </span>
+                                    </td>
+                                    <td><span class="badge text-bg-light">{{ feature.title }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ feature.state }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ feature.tt_initiative }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ feature.startdate|date:"m/d/y"|default:"" }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ feature.targetdate|date:"m/d/y"|default:"" }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ feature.areapath }}</span></td>
+                                    <td><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
+                                </tr>
+                                {% if feature.user_stories.all %}
+                                <tr id="user-stories-{{ feature.id }}" class="hidden">
+                                    <td colspan="16">
+                                        <table class="user-stories-table">
+                                            <thead>
+                                                <tr>
+                                                    <th colspan="6" class="table-primary text-center">Children User Stories</th>
+                                                </tr>
+                                                <tr>
+                                                    <th class="table-primary text-center">ID</th>
+                                                    <th class="table-primary text-center">Title</th>
+                                                    <th class="table-primary text-center">State</th>
+                                                    <th class="table-primary text-center">Story Points</th>
+                                                    <th class="table-primary text-center">Area Path</th>
+                                                    <th class="table-primary text-center">Iteration Path</th>
+
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for user_story in feature.user_stories.all %}
+                                                <tr>
+                                                    <td class="text-left">
+                                                        <span class="badge text-bg-light">
+                                                            <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover" target="_blank">{{ user_story.id }}</a>
+                                                        </span>
+                                                    </td>
+                                                    <td><span class="badge text-bg-light">{{ user_story.title }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ user_story.state }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0 }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ user_story.areapath }}</span></td>
+                                                    <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="container" style="text-align: center; padding: 10px;">
+            <span class="badge text-bg-primary">Last Refreshed: </span>
+            <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ last_refreshed.title }} EST</span>
+        </div>
+    </div>
+</body>
+{% endblock %}

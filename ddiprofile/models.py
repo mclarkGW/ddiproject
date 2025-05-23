@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 
-# Building Database Fields to Hold ADO Query Info
+# DDI Dashboard Models
 class Initiative(models.Model):
     id = models.IntegerField(primary_key=True)
     title = models.CharField(max_length=255)
@@ -98,3 +98,80 @@ class Iteration(models.Model):
     start_date = models.DateField(null=True, blank=True)  # Start date
     finish_date = models.DateField(null=True, blank=True)  # Finish date
     scriptupdated = models.CharField(max_length=255)  # Last updated timestamp
+
+#CR Dashboard Models
+class crEpic(models.Model):
+    id = models.IntegerField(primary_key=True)
+    title = models.CharField(max_length=255)
+    workitemtype = models.CharField(max_length=50)
+    state = models.CharField(max_length=50)
+    areapath = models.CharField(max_length=255, blank=True, null=True)
+    iterationpath = models.CharField(max_length=255, blank=True, null=True)
+    enddate = models.DateField(blank=True, null=True)
+    statuschoice = models.CharField(max_length=100, blank=True, null=True)
+    statustextbox = models.TextField(blank=True, null=True)
+    requiredbdate = models.DateField(blank=True, null=True)
+    epiccategory = models.CharField(max_length=100, blank=True, null=True)
+    created_date = models.DateField(blank=True, null=True)
+
+class crChangeRequest(models.Model):
+    id = models.IntegerField(primary_key=True)
+    title = models.CharField(max_length=255)
+    workitemtype = models.CharField(max_length=50)
+    state = models.CharField(max_length=50)
+    areapath = models.CharField(max_length=255, blank=True, null=True)
+    iterationpath = models.CharField(max_length=255, blank=True, null=True)
+    clientaccounts = models.CharField(max_length=255, blank=True, null=True)
+    targetdate = models.DateField(blank=True, null=True)
+    highlevelestimate = models.CharField(max_length=255, blank=True, null=True)
+    tt_initiative = models.CharField(max_length=255, blank=True, null=True)
+    tt_workdescription = models.CharField(max_length=255, blank=True, null=True)
+    tt_workcategory = models.CharField(max_length=255, blank=True, null=True)
+    tt_capwbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_expwbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_onshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_offshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    epicparent = models.ForeignKey(crEpic, on_delete=models.CASCADE, blank=True, null=True)
+    epicnumber = models.CharField(max_length=255, blank=True, null=True)
+
+class crFeature(models.Model):
+    id = models.IntegerField(primary_key=True)
+    title = models.CharField(max_length=255)
+    workitemtype = models.CharField(max_length=50)
+    state = models.CharField(max_length=50)
+    areapath = models.CharField(max_length=255, blank=True, null=True)
+    iterationpath = models.CharField(max_length=255, blank=True, null=True)
+    clientaccounts = models.CharField(max_length=255, blank=True, null=True)
+    startdate = models.DateField(blank=True, null=True)
+    targetdate = models.DateField(blank=True, null=True)
+    highlevelestimate = models.CharField(max_length=255, blank=True, null=True)
+    tt_initiative = models.CharField(max_length=255, blank=True, null=True)
+    tt_workcategory = models.CharField(max_length=255, blank=True, null=True)
+    tt_workdescription = models.CharField(max_length=255, blank=True, null=True)
+    tt_capwbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_expwbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_onshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_offshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    cr_related = models.ForeignKey(crChangeRequest, on_delete=models.CASCADE, related_name='features')
+
+class crUserStory(models.Model):
+    id = models.IntegerField(primary_key=True)
+    title = models.CharField(max_length=255)
+    workitemtype = models.CharField(max_length=50)
+    state = models.CharField(max_length=50)
+    areapath = models.CharField(max_length=255, blank=True, null=True)
+    iterationpath = models.CharField(max_length=255, blank=True, null=True)
+    clientaccounts = models.CharField(max_length=255, blank=True, null=True)
+    storypoints = models.CharField(max_length=255, blank=True, null=True)
+    tt_initiative = models.CharField(max_length=255, blank=True, null=True)
+    tt_workcategory = models.CharField(max_length=255, blank=True, null=True)
+    tt_workdescription = models.CharField(max_length=255, blank=True, null=True)
+    tt_capwbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_expwbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_onshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    tt_offshorewbs = models.CharField(max_length=255, blank=True, null=True)
+    feature_related = models.ForeignKey(crFeature, on_delete=models.CASCADE,related_name='user_stories')
+
+class crLastRefreshed(models.Model):
+    id = models.IntegerField(primary_key=True)
+    title = models.CharField(max_length=255)

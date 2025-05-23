@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <h1>Welcome to Dashboard Management</h1>
+
+    <b>Select which dashboard you would like to review.....</b>
+    <br>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">DDI Dashboard</a>
+    <a href="{% url 'crdashboard' %}" class="btn btn-primary">CR Dashboard</a>
+
+
+{% endblock %}
