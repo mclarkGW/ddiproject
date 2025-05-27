@@ -129,9 +129,18 @@
         background: #fff;
         border-color: var(--table-userstory-border);
     }
-    .custom-titlewidth { max-width: 600px; min-width: 240px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .custom-titlewidth { max-width: 375px; min-width: 240px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-clientwidth { max-width: 170px; min-width: 100px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-relatedwidth { width: 52px; min-width: 45px; text-align: center; }
+    .custom-contractidwidth {
+        max-width: 90px; /* or your desired width */
+        width: 90px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
+        display: table-cell;
+    }
     .expand-btn { cursor: pointer; font-weight: bold; width: 28px; min-width: 28px; text-align: center; }
     .badge-client { font-size: 0.6em; padding: 1px 3px; margin-right: 2px; margin-bottom: 1px; background-color:rgb(157, 158, 158); color: #fff; border-radius: 6px; font-weight: 400; letter-spacing: 0.01em; vertical-align: middle; display: inline-block; line-height: 1.2; }
     .custom-titletext { display: block; white-space: normal; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; max-height: calc(1.2em * 2); text-align: left; }
@@ -354,7 +363,7 @@
             <tr>
                 <th class="custom-relatedwidth">+/-</th>
                 <th class="custom-relatedwidth"># Features</th>
-                <th>Contract ID</th>
+                <th class="custom-contractidwidth">Contract ID</th>
                 <th>ID</th>
                 <th class="custom-titlewidth">Title</th>
                 <th class="col-end">State</th>
@@ -382,13 +391,17 @@
                     {% if cr.features.all %}+{% else %}&nbsp;{% endif %}
                 </td>
                 <td class="custom-relatedwidth">{% if cr.features.all %}<span class="badge text-bg-light">{{ cr.features.count }}</span>{% endif %}</td>
-                <td><span class="badge text-bg-light">{{ cr.tt_workdescription }}</span></td>
+                <td title="{{ cr.tt_workdescription }}">
+                <span class="custom-contractidwidth badge text-bg-light">{{ cr.tt_workdescription }}</span>
+                </td>
                 <td class="text-left">
                     <span class="badge text-bg-light">
                         <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ cr.id }}" class="link-primary" target="_blank">{{ cr.id }}</a>
                     </span>
                 </td>
-                <td class="custom-titlewidth"><span class="badge text-bg-light">{{ cr.title }}</span></td>
+                <td title="{{ cr.title }}">
+                    <span class="custom-titlewidth badge text-bg-light">{{ cr.title }}</span>
+                </td>
                 <td class="text-center">
                     <span class="badge
                         {% if cr.state == 'Funnel' %}text-bg-secondary
