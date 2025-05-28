@@ -18,6 +18,9 @@
         --table-userstory-bg: #fff8e6;
         --table-userstory-border: #e3b04b;
         --table-userstory-header: #fff3d6;
+        --table-task-bg: #fff2ee;          /* light red for tasks */
+        --table-task-border: #e57373;      /* soft red for border */
+        --table-task-header: #ffe5e0;      /* even lighter red for header */
         --modern-shadow: 0 2px 12px 0 rgba(0,0,0,0.08);
     }
     .dash-title {
@@ -128,6 +131,23 @@
     .table-userstory td {
         background: #fff;
         border-color: var(--table-userstory-border);
+    }
+    .table-task {
+        background: var(--table-task-bg);
+        border: 1.5px solid var(--table-task-border);
+        box-shadow: var(--modern-shadow);
+        border-radius: 7px;
+        margin-bottom: 0.7rem;
+        width: 100%;
+    }
+    .table-task th {
+        background: var(--table-task-header);
+        color: #b71c1c;
+        border-bottom: 2px solid var(--table-task-border);
+    }
+    .table-task td {
+        background: #fff;
+        border-color: var(--table-task-border);
     }
     .custom-titlewidth { max-width: 375px; min-width: 240px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-clientwidth { max-width: 170px; min-width: 100px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -443,10 +463,10 @@
                     {{ cr.target_vs_pi }}
                 </span>
                 </td>
-                <td class="text-center"><span class="badge text-bg-light">{{ cr.highlevelestimate|default:""|floatformat:0 }}</span></td>
-                <td class="text-center"><span class="badge text-bg-light">{{ cr.total_planned|default:""|floatformat:0 }}</span></td>
-                <td class="text-center"><span class="badge text-bg-light">Actual</span></td>
-                <td class="text-center">
+                <td class="text-center", title="High Level Estimate on CR in ADO"><span class="badge text-bg-light">{{ cr.highlevelestimate|default:""|floatformat:0 }}</span></td>
+                <td class="text-center", title="Sum of Original Estimate on Task in ADO"><span class="badge text-bg-light">{{ cr.total_task_originalestimate|default:""|floatformat:0 }}</span></td>
+                <td class="text-center", title="Sum of Completed on Task in ADO"><span class="badge text-bg-light">{{ cr.total_task_completedwork|default:""|floatformat:0 }}</span></td>
+                <td class="text-center", title="Difference between Planned and Estimate">
                     {% if cr.planned_vs_estimate is not None and cr.planned_vs_estimate != "" and cr.planned_vs_estimate != 0 %}
                         <span class="badge
                             {% if cr.planned_vs_estimate < 0 %}
@@ -545,6 +565,8 @@
                                                 <th colspan="10"><b>Children User Stories</b></th>
                                             <tr>
                                             <tr>
+                                                <th class="custom-relatedwidth">+/-</th>
+                                                <th class="custom-relatedwidth"># Tasks</th>
                                                 <th>ID</th>
                                                 <th class="custom-titlewidth">User Story Title</th>
                                                 <th>State</th>
@@ -554,32 +576,89 @@
                                         </thead>
                                         <tbody>
                                             {% for user_story in feature.user_stories.all %}
-                                            <tr>
-                                                <td class="text-left">
-                                                    <span class="badge text-bg-light">
-                                                        <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary" target="_blank">{{ user_story.id }}</a>
-                                                    </span>
-                                                </td>
-                                                <td title="{{ user_story.title }}">
-                                                    <span class="custom-titlewidth badge text-bg-light">{{ user_story.title }}</span>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="badge
-                                                        {% if user_story.state == 'New' %}text-bg-secondary
-                                                        {% elif user_story.state == 'Backlog' %}text-bg-info
-                                                        {% elif user_story.state == 'Ready' %}text-bg-info
-                                                        {% elif user_story.state == 'In Progress' %}text-bg-warning
-                                                        {% elif user_story.state == 'Test' %}text-bg-info
-                                                        {% elif user_story.state == 'BLOCKED' %}text-bg-danger
-                                                        {% elif user_story.state == 'Done' %}text-bg-primary
-                                                        {% else %}text-bg-dark
-                                                        {% endif %}
-                                                    ">{{ user_story.state }}</span>
-                                                </td>
-                                                <td class="text-center"><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0 }}</span></td>
-                                                <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
-                                            </tr>
-                                            {% endfor %}
+                                    <tr>
+                                        <td class="text-center">
+                                            {% if user_story.tasks.all %}
+                                            <span class="expand-btn" id="expand-btn-userstory-{{ feature.id }}-{{ user_story.id }}" onclick="toggleRow('tasks-{{ feature.id }}-{{ user_story.id }}', 'expand-btn-userstory-{{ feature.id }}-{{ user_story.id }}')">+</span>
+                                            {% else %}
+                                            &nbsp;
+                                            {% endif %}
+                                        </td>
+                                        <td class="custom-relatedwidth">{% if user_story.tasks.all %}<span class="badge text-bg-light">{{ user_story.tasks.count }}</span>{% endif %}</td>
+                                        <td class="text-left">
+                                            <span class="badge text-bg-light">
+                                                <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary" target="_blank">{{ user_story.id }}</a>
+                                            </span>
+                                        </td>
+                                        <td title="{{ user_story.title }}">
+                                            <span class="custom-titlewidth badge text-bg-light">{{ user_story.title }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge
+                                                {% if user_story.state == 'New' %}text-bg-secondary
+                                                {% elif user_story.state == 'Backlog' %}text-bg-info
+                                                {% elif user_story.state == 'Ready' %}text-bg-info
+                                                {% elif user_story.state == 'In Progress' %}text-bg-warning
+                                                {% elif user_story.state == 'Test' %}text-bg-info
+                                                {% elif user_story.state == 'BLOCKED' %}text-bg-danger
+                                                {% elif user_story.state == 'Done' %}text-bg-primary
+                                                {% else %}text-bg-dark
+                                                {% endif %}
+                                            ">{{ user_story.state }}</span>
+                                        </td>
+                                        <td class="text-center"><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0 }}</span></td>
+                                        <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
+                                    </tr>
+                                    {% if user_story.tasks.all %}
+                                    <tr id="tasks-{{ feature.id }}-{{ user_story.id }}" class="hidden">
+                                        <td colspan="7" style="background: var(--table-task-bg); padding: 0.25rem;">
+                                            <table class="table-task">
+                                                <thead>
+                                                    <tr>
+                                                        <th colspan="7"><b>Children Tasks</b></th>
+                                                    <tr>
+                                                    <tr>
+                                                        <th>Task ID</th>
+                                                        <th class="custom-titlewidth">Task Title</th>
+                                                        <th>State</th>
+                                                        <th>Original Est</th>
+                                                        <th>Completed</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for task in user_story.tasks.all %}
+                                                    <tr>
+                                                        <td class="text-left">
+                                                            <span class="badge text-bg-light">
+                                                                <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ task.id }}" class="link-primary" target="_blank">{{ task.id }}</a>
+                                                            </span>
+                                                        </td>
+                                                        <td title="{{ task.title }}">
+                                                            <span class="custom-titlewidth badge text-bg-light">{{ task.title }}</span>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span class="badge
+                                                                {% if task.state == 'New' %}text-bg-secondary
+                                                                {% elif task.state == 'Backlog' %}text-bg-info
+                                                                {% elif task.state == 'Ready' %}text-bg-info
+                                                                {% elif task.state == 'In Progress' %}text-bg-warning
+                                                                {% elif task.state == 'Test' %}text-bg-info
+                                                                {% elif task.state == 'BLOCKED' %}text-bg-danger
+                                                                {% elif task.state == 'Done' %}text-bg-primary
+                                                                {% else %}text-bg-dark
+                                                                {% endif %}
+                                                            ">{{ task.state }}</span>
+                                                        </td>
+                                                        <td class="text-center"><span class="badge text-bg-light">{{ task.originalestimate|default:""|floatformat:0 }}</span></td>
+                                                        <td class="text-center"><span class="badge text-bg-light">{{ task.completedwork|default:""|floatformat:0 }}</span></td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
                                         </tbody>
                                     </table>
                                 </td>

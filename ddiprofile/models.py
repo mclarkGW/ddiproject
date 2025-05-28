@@ -172,6 +172,19 @@ class crUserStory(models.Model):
     tt_offshorewbs = models.CharField(max_length=255, blank=True, null=True)
     feature_related = models.ForeignKey(crFeature, on_delete=models.CASCADE,related_name='user_stories')
 
+class crTask(models.Model):
+    id= models.IntegerField(primary_key=True)
+    title = models.CharField(max_length=255)
+    workitemtype = models.CharField(max_length=50)
+    state = models.CharField(max_length=50)
+    areapath = models.CharField(max_length=255, blank=True, null=True)
+    iterationpath = models.CharField(max_length=255, blank=True, null=True)
+    storypoints = models.CharField(max_length=255, blank=True, null=True)
+    originalestimate = models.CharField(max_length=255, blank=True, null=True)
+    remainingwork = models.CharField(max_length=255, blank=True, null=True)
+    completedwork = models.CharField(max_length=255, blank=True, null=True)
+    userstory_related = models.ForeignKey(crUserStory, on_delete=models.CASCADE, related_name='tasks')
+
 class crLastRefreshed(models.Model):
     id = models.IntegerField(primary_key=True)
     title = models.CharField(max_length=255)

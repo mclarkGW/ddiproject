@@ -1,6 +1,6 @@
 from django.db.models import Sum, F, FloatField, Count
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crEpic, crChangeRequest, crFeature, crUserStory, crLastRefreshed, WBSInformation
+from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crEpic, crChangeRequest, crFeature, crUserStory,crTask, crLastRefreshed, WBSInformation
 from datetime import datetime, date
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -117,7 +117,8 @@ def cr_dashboard_view(request):
     cr = crChangeRequest.objects.all() \
         .prefetch_related(
             'features',
-            'features__user_stories'
+            'features__user_stories',
+            'features__user_stories__tasks'
         ) \
         .order_by('clientaccounts')
 
@@ -188,14 +189,6 @@ def cr_dashboard_view(request):
         change_request.pi_end = cr_pi_end
         change_request.total_sp = total_done + total_active + total_new  # Total story points (in "hours") as sum of all states
 
-        # *** Planned vs Estimate Calculation ***
-        highlevelestimate_raw = getattr(change_request, 'highlevelestimate', 0) or 0
-        try:
-            highlevelestimate = float(highlevelestimate_raw)
-        except (ValueError, TypeError):
-            highlevelestimate = 0
-        change_request.planned_vs_estimate = change_request.total_planned - highlevelestimate
-
         # Progress percentage for progress bar
         if change_request.total_sp > 0:
             change_request.percent_done = int(round((change_request.total_done / change_request.total_sp) * 100))
@@ -219,6 +212,45 @@ def cr_dashboard_view(request):
         # Attach WBS effort rollup to each CR using tt_workdescription
         workdesc = getattr(change_request, 'tt_workdescription', None)
         change_request.wbs_total_effort = wbs_effort_map.get(workdesc, 0)
+
+        # --- TASK ROLLUPS ---
+        total_originalestimate = 0.0
+        total_remainingwork = 0.0
+        total_completedwork = 0.0
+        all_tasks = []
+
+        for feature in change_request.features.all():
+            for user_story in feature.user_stories.all():
+                for task in user_story.tasks.all():
+                    all_tasks.append(task)
+                    # originalestimate
+                    try:
+                        total_originalestimate += float(task.originalestimate or 0)
+                    except (ValueError, TypeError):
+                        pass
+                    # remainingwork
+                    try:
+                        total_remainingwork += float(task.remainingwork or 0)
+                    except (ValueError, TypeError):
+                        pass
+                    # completedwork
+                    try:
+                        total_completedwork += float(task.completedwork or 0)
+                    except (ValueError, TypeError):
+                        pass
+
+        change_request.tasks = all_tasks  # List of all tasks under this CR (for display)
+        change_request.total_task_originalestimate = total_originalestimate
+        change_request.total_task_remainingwork = total_remainingwork
+        change_request.total_task_completedwork = total_completedwork
+
+        # *** Planned vs Estimate Calculation ***
+        highlevelestimate_raw = getattr(change_request, 'highlevelestimate', 0) or 0
+        try:
+            highlevelestimate = float(highlevelestimate_raw)
+        except (ValueError, TypeError):
+            highlevelestimate = 0
+        change_request.planned_vs_estimate = change_request.total_task_originalestimate - highlevelestimate
 
     context = {
         'last_refreshed': last_refreshed,

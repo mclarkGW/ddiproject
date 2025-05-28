@@ -4,7 +4,8 @@ import requests
 from django.core.management.base import BaseCommand
 from datetime import datetime
 from django.db import transaction
-from ddiprofile.models import crEpic, crFeature, crUserStory, crLastRefreshed, crChangeRequest
+from ddiprofile.models import crEpic, crFeature, crUserStory, crLastRefreshed, crChangeRequest, crTask
+
 
 class Command(BaseCommand):
     help = 'Fetch Change Requests from Azure DevOps and store them in the database'
@@ -15,6 +16,7 @@ class Command(BaseCommand):
         crChangeRequest.objects.all().delete()
         crFeature.objects.all().delete()
         crUserStory.objects.all().delete()
+        crTask.objects.all().delete()
 
         organization = 'payerportfolio'
         project_workitems = 'USHC_AMER_US_ADU_HSP_Ua3'
@@ -138,7 +140,7 @@ class Command(BaseCommand):
                                     for user_story_data in user_stories:
                                         # Save each User Story
                                         print(f"  Saving User Story: {user_story_data.get('id')} | {user_story_data.get('title')}")
-                                        crUserStory.objects.update_or_create(
+                                        user_story_instance, _ = crUserStory.objects.update_or_create(
                                             id=user_story_data.get('id'),
                                             defaults={
                                                 'title': user_story_data.get('title'),
@@ -158,6 +160,26 @@ class Command(BaseCommand):
                                                 'feature_related': feature_instance  # Link to parent Feature
                                             }
                                         )
+                                        # Fetch and save child tasks for this User Story
+                                        task_children = fetch_task_children(organization, project_workitems, pat, [user_story_instance.id])
+                                        if task_children:
+                                            for task_data in task_children:
+                                                print(f"    Saving Task: {task_data.get('id')} | {task_data.get('title')}")
+                                                crTask.objects.update_or_create(
+                                                    id=task_data.get('id'),
+                                                    defaults={
+                                                        'title': task_data.get('title'),
+                                                        'workitemtype': task_data.get('workitemtype'),
+                                                        'state': task_data.get('state'),
+                                                        'areapath': task_data.get('areapath'),
+                                                        'iterationpath': task_data.get('iterationpath'),
+                                                        'storypoints': task_data.get('storypoints'),
+                                                        'originalestimate': task_data.get('originalestimate'),
+                                                        'remainingwork': task_data.get('remainingwork'),
+                                                        'completedwork': task_data.get('completedwork'),
+                                                        'userstory_related': user_story_instance
+                                                    }
+                                                )
                                 # --------------------------------------------------------
 
         except requests.exceptions.RequestException as e:
@@ -249,6 +271,9 @@ def fetch_work_item_details(organization, project, pat, work_item_ids):
                     'tt_offshorewbs': fields.get('Custom.TT_OffShoreWBS', '') if 'fields' in item else '',
                     'startdate': fields.get('Microsoft.VSTS.Scheduling.StartDate', '') if 'fields' in item else '',
                     'storypoints': fields.get('Microsoft.VSTS.Scheduling.StoryPoints', '') if 'fields' in item else '',
+                    'originalestimate': fields.get('Microsoft.VSTS.Scheduling.OriginalEstimate', '') if 'fields' in item else '',
+                    'remainingwork': fields.get('Microsoft.VSTS.Scheduling.RemainingWork', '') if 'fields' in item else '',
+                    'completedwork': fields.get('Microsoft.VSTS.Scheduling.CompletedWork', '') if 'fields' in item else '',
 
                 })
 
@@ -290,3 +315,38 @@ def fetch_user_story_children(organization, project, pat, feature_ids):
                 user_stories.append(child_data)
 
     return user_stories
+
+# Fetch Task children for a User Story
+def fetch_task_children(organization, project, pat, user_story_ids):
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Basic {base64.b64encode(f":{pat}".encode()).decode()}'
+    }
+    task_ids = []
+    batch_size = 100
+
+    for i in range(0, len(user_story_ids), batch_size):
+        batch_ids = user_story_ids[i:i + batch_size]
+        ids_string = ','.join(map(str, batch_ids))
+        detail_url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems?ids={ids_string}&$expand=relations&api-version=7.0'
+        response = requests.get(detail_url, headers=headers)
+        response.raise_for_status()
+
+        if response.status_code == 200:
+            detail_data = response.json()
+            for item in detail_data.get('value', []):
+                relations = item.get('relations', [])
+                for relation in relations:
+                    if relation.get('rel') == 'System.LinkTypes.Hierarchy-Forward':
+                        child_url = relation.get('url')
+                        child_id = child_url.split('/')[-1]
+                        task_ids.append(child_id)
+
+    # Fetch details for all children and filter for Tasks
+    tasks = []
+    if task_ids:
+        task_details = fetch_work_item_details(organization, project, pat, task_ids)
+        for child_data in task_details:
+            if child_data.get('workitemtype') == 'Task':
+                tasks.append(child_data)
+    return tasks
