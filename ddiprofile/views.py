@@ -1,6 +1,6 @@
 from django.db.models import Sum, F, FloatField, Count
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crEpic, crChangeRequest, crFeature, crUserStory, crLastRefreshed
+from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crEpic, crChangeRequest, crFeature, crUserStory, crLastRefreshed, WBSInformation
 from datetime import datetime, date
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -9,7 +9,7 @@ import requests
 import base64
 import json
 from itertools import groupby
-from collections import Counter
+from collections import Counter, defaultdict
 
 
 def index(request):
@@ -103,6 +103,16 @@ def run_fetch_data(request):
 # CR Dashboard View
 def cr_dashboard_view(request):
     last_refreshed = crLastRefreshed.objects.first()
+
+    # Build rollup: workdescription -> total effort
+    wbs_effort_map = defaultdict(float)
+    for wbs in WBSInformation.objects.values('workdescription', 'effort'):
+        wd = wbs['workdescription']
+        effort = wbs['effort'] or 0
+        if wd:
+            wbs_effort_map[wd] += float(effort)
+
+
     # Prefetch features and their user stories for optimized queries
     cr = crChangeRequest.objects.all() \
         .prefetch_related(
@@ -178,6 +188,14 @@ def cr_dashboard_view(request):
         change_request.pi_end = cr_pi_end
         change_request.total_sp = total_done + total_active + total_new  # Total story points (in "hours") as sum of all states
 
+        # *** Planned vs Estimate Calculation ***
+        highlevelestimate_raw = getattr(change_request, 'highlevelestimate', 0) or 0
+        try:
+            highlevelestimate = float(highlevelestimate_raw)
+        except (ValueError, TypeError):
+            highlevelestimate = 0
+        change_request.planned_vs_estimate = change_request.total_planned - highlevelestimate
+
         # Progress percentage for progress bar
         if change_request.total_sp > 0:
             change_request.percent_done = int(round((change_request.total_done / change_request.total_sp) * 100))
@@ -197,6 +215,10 @@ def cr_dashboard_view(request):
                 change_request.target_vs_pi = '0'
         else:
             change_request.target_vs_pi = ''
+
+        # Attach WBS effort rollup to each CR using tt_workdescription
+        workdesc = getattr(change_request, 'tt_workdescription', None)
+        change_request.wbs_total_effort = wbs_effort_map.get(workdesc, 0)
 
     context = {
         'last_refreshed': last_refreshed,

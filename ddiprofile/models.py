@@ -175,3 +175,22 @@ class crUserStory(models.Model):
 class crLastRefreshed(models.Model):
     id = models.IntegerField(primary_key=True)
     title = models.CharField(max_length=255)
+
+#WBS Information Models
+class WBSInformation(models.Model):
+    id = models.IntegerField(primary_key=True)
+    employee_id = models.CharField(max_length=50, blank=True, null=True)
+    employee_name = models.CharField(max_length=255, blank=True, null=True)
+    workdate = models.DateField(blank=True, null=True)
+    effort = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, blank=True, null=True)
+    atype = models.CharField(max_length=50, blank=True, null=True)
+    atypetext = models.CharField(max_length=255, blank=True, null=True)
+    wbs = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    initiative = models.CharField(max_length=255, blank=True, null=True)
+    workcategory = models.CharField(max_length=255, blank=True, null=True)
+    workdescription = models.CharField(max_length=255, blank=True, null=True)
+    module = models.CharField(max_length=255, blank=True, null=True)
+    backlog = models.CharField(max_length=255, blank=True, null=True)
+    wbstype = models.CharField(max_length=50, blank=True, null=True)
+    monthyear = models.CharField(max_length=50, blank=True, null=True)

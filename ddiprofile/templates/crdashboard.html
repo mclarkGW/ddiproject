@@ -446,8 +446,24 @@
                 <td class="text-center"><span class="badge text-bg-light">{{ cr.highlevelestimate|default:""|floatformat:0 }}</span></td>
                 <td class="text-center"><span class="badge text-bg-light">{{ cr.total_planned|default:""|floatformat:0 }}</span></td>
                 <td class="text-center"><span class="badge text-bg-light">Actual</span></td>
-                <td class="text-center"><span class="badge text-bg-light">+/-</span></td>
-                <td class="text-center"><span class="badge text-bg-light">WBS Hours</span></td>
+                <td class="text-center">
+                    {% if cr.planned_vs_estimate is not None and cr.planned_vs_estimate != "" and cr.planned_vs_estimate != 0 %}
+                        <span class="badge
+                            {% if cr.planned_vs_estimate < 0 %}
+                                text-bg-success
+                            {% elif cr.planned_vs_estimate > 0 %}
+                                text-bg-warning
+                            {% endif %}
+                        ">
+                            {% if cr.planned_vs_estimate > 0 %}
+                                +{{ cr.planned_vs_estimate|floatformat:0 }}
+                            {% else %}
+                                {{ cr.planned_vs_estimate|floatformat:0 }}
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="text-center"><span class="badge text-bg-light">{{ cr.wbs_total_effort|default:""|floatformat:0 }}</span></td>
                 <td class="text-center"><span class="badge text-bg-light">{{ cr.total_done|default:""|floatformat:0 }}</span></td>
                 <td class="text-center"><span class="badge text-bg-light">{{ cr.total_active|default:""|floatformat:0 }}</span></td>
                 <td class="text-center"><span class="badge text-bg-light">{{ cr.total_new|default:""|floatformat:0 }}</span></td>
@@ -498,8 +514,8 @@
                                         <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ feature.id }}" class="link-primary" target="_blank">{{ feature.id }}</a>
                                     </span>
                                 </td>
-                                <td class="custom-titlewidth">
-                                    <span class="badge text-bg-light text-wrap custom-titletext">{{ feature.title }}</span>
+                                <td title="{{ feature.title }}">
+                                    <span class="custom-titlewidth badge text-bg-light">{{ feature.title }}</span>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge
@@ -544,8 +560,8 @@
                                                         <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary" target="_blank">{{ user_story.id }}</a>
                                                     </span>
                                                 </td>
-                                                <td class="custom-titlewidth">
-                                                    <span class="badge text-bg-light text-wrap custom-titletext">{{ user_story.title }}</span>
+                                                <td title="{{ user_story.title }}">
+                                                    <span class="custom-titlewidth badge text-bg-light">{{ user_story.title }}</span>
                                                 </td>
                                                 <td class="text-center">
                                                     <span class="badge
