@@ -11,8 +11,10 @@ urlpatterns = [
     path('iteration/', views.iteration_view, name='iteration'),
 # URL for Fetch Iterations
     path('run-fetch-iterations/', views.run_fetch_iterations, name='run_fetch_iterations'),
-# URL for Fetch Data
+# URL for Fetch DDI Data
     path('run-fetch-data/', views.run_fetch_data, name='run_fetch_data'),
+    # URL for Fetch CR Data
+    path('run-crfetch-data/', views.run_crfetch_data, name='run_crfetch_data'),
 # URL for CR Dashboard
     path('crdashboard/', views.cr_dashboard_view, name='crdashboard'),
 # URL for CR Charts

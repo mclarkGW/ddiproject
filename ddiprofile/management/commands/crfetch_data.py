@@ -1,23 +1,18 @@
 import base64
 import os
 import requests
+import time
 from django.core.management.base import BaseCommand
 from datetime import datetime
+import pytz
 from django.db import transaction
 from ddiprofile.models import crEpic, crFeature, crUserStory, crLastRefreshed, crChangeRequest, crTask
-
 
 class Command(BaseCommand):
     help = 'Fetch Change Requests from Azure DevOps and store them in the database'
 
     def handle(self, *args, **kwargs):
-        # Clear all records from the Initiative and Epic tables
-        crEpic.objects.all().delete()
-        crChangeRequest.objects.all().delete()
-        crFeature.objects.all().delete()
-        crUserStory.objects.all().delete()
-        crTask.objects.all().delete()
-
+        start_time = time.time()
         organization = 'payerportfolio'
         project_workitems = 'USHC_AMER_US_ADU_HSP_Ua3'
         pat = 'CByqSGDnGCIxr6qgEBSdxWspYW2Yuuvgq5cdqdlliShNDKYtOnE3JQQJ99BCACAAAAA85jZPAAASAZDO474U'
@@ -39,6 +34,12 @@ class Command(BaseCommand):
             ORDER BY [System.Title] ASC
             """
         }
+
+        # Track seen IDs for pruning
+        seen_cr_ids = set()
+        seen_feature_ids = set()
+        seen_userstory_ids = set()
+        seen_task_ids = set()
 
         try:
             cr_response = requests.post(url_workitems, headers=headers, json=cr_query_payload)
@@ -72,6 +73,7 @@ class Command(BaseCommand):
                             id=changerequest_data.get('id'),
                             defaults=defaults
                         )
+                        seen_cr_ids.add(change_request_instance.id)
                         print(f"Saving Change Request: {changerequest_data.get('id')} | {changerequest_data.get('title')}")
 
                         # Query associated Features
@@ -100,14 +102,9 @@ class Command(BaseCommand):
                             features = fetch_work_item_details(organization, project_workitems, pat, feature_work_items_ids)
 
                             for feature_data in features:
-                                # Debugging: Log Feature details before saving
                                 print(f" Saving Feature: {feature_data.get('id')} | {feature_data.get('title')}")
-
-                                # Parse dates
                                 parsed_startdate = parse_date(feature_data.get('startdate'))
                                 parsed_targetdate = parse_date(feature_data.get('targetdate'))
-
-                                # Update or create Feature
                                 defaults = {
                                     'title': feature_data.get('title'),
                                     'workitemtype': feature_data.get('workitemtype'),
@@ -127,18 +124,16 @@ class Command(BaseCommand):
                                     'tt_offshorewbs': feature_data.get('tt_offshorewbs'),
                                     'cr_related': change_request_instance
                                 }
-
                                 feature_instance, created = crFeature.objects.update_or_create(
                                     id=feature_data.get('id'),
                                     defaults=defaults
                                 )
+                                seen_feature_ids.add(feature_instance.id)
 
                                 # --- Fetch and Save User Story Children (UPDATED CODE) ---
-                                # Fetch User Story children for the Feature
-                                user_stories = fetch_user_story_children(organization, project_workitems, pat,[feature_instance.id])
+                                user_stories = fetch_user_story_children(organization, project_workitems, pat, [feature_instance.id])
                                 if user_stories:
                                     for user_story_data in user_stories:
-                                        # Save each User Story
                                         print(f"  Saving User Story: {user_story_data.get('id')} | {user_story_data.get('title')}")
                                         user_story_instance, _ = crUserStory.objects.update_or_create(
                                             id=user_story_data.get('id'),
@@ -157,15 +152,17 @@ class Command(BaseCommand):
                                                 'tt_expwbs': user_story_data.get('tt_expwbs'),
                                                 'tt_onshorewbs': user_story_data.get('tt_onshorewbs'),
                                                 'tt_offshorewbs': user_story_data.get('tt_offshorewbs'),
-                                                'feature_related': feature_instance  # Link to parent Feature
+                                                'feature_related': feature_instance
                                             }
                                         )
+                                        seen_userstory_ids.add(user_story_instance.id)
+
                                         # Fetch and save child tasks for this User Story
                                         task_children = fetch_task_children(organization, project_workitems, pat, [user_story_instance.id])
                                         if task_children:
                                             for task_data in task_children:
                                                 print(f"    Saving Task: {task_data.get('id')} | {task_data.get('title')}")
-                                                crTask.objects.update_or_create(
+                                                task_instance, _ = crTask.objects.update_or_create(
                                                     id=task_data.get('id'),
                                                     defaults={
                                                         'title': task_data.get('title'),
@@ -180,31 +177,46 @@ class Command(BaseCommand):
                                                         'userstory_related': user_story_instance
                                                     }
                                                 )
+                                                seen_task_ids.add(task_instance.id)
                                 # --------------------------------------------------------
 
         except requests.exceptions.RequestException as e:
             self.stderr.write(f"Error fetching Change Requests: {e}")
             return
 
+        # PRUNE: Delete any records not seen in this run
+        crChangeRequest.objects.exclude(id__in=seen_cr_ids).delete()
+        crFeature.objects.exclude(id__in=seen_feature_ids).delete()
+        crUserStory.objects.exclude(id__in=seen_userstory_ids).delete()
+        crTask.objects.exclude(id__in=seen_task_ids).delete()
+
         # Update the LastRefreshed model
+        now_utc = datetime.now(pytz.utc)
+        eastern = pytz.timezone('US/Eastern')
+        now = now_utc.astimezone(eastern)
         crLastRefreshed.objects.update_or_create(
             id=1,
-            defaults={'title': datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+            defaults={
+                'title': now.strftime("%Y-%m-%d %H:%M:%S")
+            }
         )
-        # Retrieve the updated title from the model and log it
         last_refreshed = crLastRefreshed.objects.get(id=1)
+        end_time = time.time()
+        duration = end_time - start_time
+        mins, secs = divmod(duration, 60)
+        self.stdout.write(f"Script duration: {int(mins)} min {secs:.2f} sec")
         self.stdout.write(f'Updated LastRefreshed model: {last_refreshed.title} EST')
 
-# Add parse_date and fetch_work_item_details functions here.
+# Add parse_date and fetch_work_item_details functions here, unchanged from your script.
 def parse_date(date_str):
     if isinstance(date_str, datetime):
         return date_str.date()
     if date_str and isinstance(date_str, str):
         date_formats = [
-            '%Y-%m-%dT%H:%M:%S.%fZ',  # Format with fractional seconds
-            '%Y-%m-%dT%H:%M:%SZ',     # Format without fractional seconds
-            '%Y-%m-%dT%H:%M:%S',      # ISO 8601 format without timezone
-            '%Y-%m-%d'                # Simple date format
+            '%Y-%m-%dT%H:%M:%S.%fZ',
+            '%Y-%m-%dT%H:%M:%SZ',
+            '%Y-%m-%dT%H:%M:%S',
+            '%Y-%m-%d'
         ]
         for date_format in date_formats:
             try:
@@ -231,25 +243,21 @@ def parse_float(value):
             return None
     return None
 
-# Function to fetch work item details in batches
 def fetch_work_item_details(organization, project, pat, work_item_ids):
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Basic {base64.b64encode(f":{pat}".encode()).decode()}'
     }
     work_items = []
-    batch_size = 100  # Adjust batch size as needed
-
+    batch_size = 100
     for i in range(0, len(work_item_ids), batch_size):
         batch_ids = work_item_ids[i:i + batch_size]
         ids_string = ','.join(batch_ids)
         detail_url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems?ids={ids_string}&api-version=7.0'
         detail_response = requests.get(detail_url, headers=headers)
-        detail_response.raise_for_status()  # Raise an exception for HTTP errors
-
+        detail_response.raise_for_status()
         if detail_response.status_code == 200:
             detail_data = detail_response.json()
-
             for item in detail_data.get('value', []):
                 fields = item.get('fields', {})
                 work_items.append({
@@ -274,49 +282,39 @@ def fetch_work_item_details(organization, project, pat, work_item_ids):
                     'originalestimate': fields.get('Microsoft.VSTS.Scheduling.OriginalEstimate', '') if 'fields' in item else '',
                     'remainingwork': fields.get('Microsoft.VSTS.Scheduling.RemainingWork', '') if 'fields' in item else '',
                     'completedwork': fields.get('Microsoft.VSTS.Scheduling.CompletedWork', '') if 'fields' in item else '',
-
                 })
-
     return work_items
 
-# NEW FUNCTION: Fetch only User Story children for a Feature
 def fetch_user_story_children(organization, project, pat, feature_ids):
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Basic {base64.b64encode(f":{pat}".encode()).decode()}'
     }
     user_story_ids = []
-    batch_size = 100  # Adjust batch size as needed
-
+    batch_size = 100
     for i in range(0, len(feature_ids), batch_size):
         batch_ids = feature_ids[i:i + batch_size]
-        ids_string = ','.join(map(str, batch_ids))  # Convert integers to strings
+        ids_string = ','.join(map(str, batch_ids))
         detail_url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems?ids={ids_string}&$expand=relations&api-version=7.0'
         response = requests.get(detail_url, headers=headers)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-
+        response.raise_for_status()
         if response.status_code == 200:
             detail_data = response.json()
             for item in detail_data.get('value', []):
-                # Check for "Child" relations
                 relations = item.get('relations', [])
                 for relation in relations:
-                    if relation.get('rel') == 'System.LinkTypes.Hierarchy-Forward':  # "Child" link type
+                    if relation.get('rel') == 'System.LinkTypes.Hierarchy-Forward':
                         child_url = relation.get('url')
-                        child_id = child_url.split('/')[-1]  # Extract the work item ID from the URL
+                        child_id = child_url.split('/')[-1]
                         user_story_ids.append(child_id)
-
-    # Fetch details for all children and filter for User Stories
     user_stories = []
     if user_story_ids:
         user_story_details = fetch_work_item_details(organization, project, pat, user_story_ids)
         for child_data in user_story_details:
-            if child_data.get('workitemtype') == 'User Story':  # Filter for User Stories
+            if child_data.get('workitemtype') == 'User Story':
                 user_stories.append(child_data)
-
     return user_stories
 
-# Fetch Task children for a User Story
 def fetch_task_children(organization, project, pat, user_story_ids):
     headers = {
         'Content-Type': 'application/json',
@@ -324,14 +322,12 @@ def fetch_task_children(organization, project, pat, user_story_ids):
     }
     task_ids = []
     batch_size = 100
-
     for i in range(0, len(user_story_ids), batch_size):
         batch_ids = user_story_ids[i:i + batch_size]
         ids_string = ','.join(map(str, batch_ids))
         detail_url = f'https://dev.azure.com/{organization}/{project}/_apis/wit/workitems?ids={ids_string}&$expand=relations&api-version=7.0'
         response = requests.get(detail_url, headers=headers)
         response.raise_for_status()
-
         if response.status_code == 200:
             detail_data = response.json()
             for item in detail_data.get('value', []):
@@ -341,8 +337,6 @@ def fetch_task_children(organization, project, pat, user_story_ids):
                         child_url = relation.get('url')
                         child_id = child_url.split('/')[-1]
                         task_ids.append(child_id)
-
-    # Fetch details for all children and filter for Tasks
     tasks = []
     if task_ids:
         task_details = fetch_work_item_details(organization, project, pat, task_ids)

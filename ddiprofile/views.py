@@ -76,6 +76,7 @@ def iteration_view(request):
 
 # Fetch Iterations View
 def run_fetch_iterations(request):
+    last_refreshed = Iteration.objects.order_by('-scriptupdated').first()
     if request.method == "POST":
         try:
             # Call the custom management command
@@ -85,10 +86,11 @@ def run_fetch_iterations(request):
             return JsonResponse({"status": "error", "message": str(e)})
     else:
         # Render the HTML template for GET requests
-        return render(request, "run_fetch_iterations.html")
+        return render(request, "run_fetch_iterations.html", {"last_refreshed": last_refreshed})
 
-# Fetch Data View
+# Fetch DDI Data View
 def run_fetch_data(request):
+    last_refreshed = LastRefreshed.objects.first()
     if request.method == "POST":
         try:
             # Call the custom management command
@@ -98,7 +100,21 @@ def run_fetch_data(request):
             return JsonResponse({"status": "error", "message": str(e)})
     else:
         # Render the HTML template for GET requests
-        return render(request, "run_fetch_data.html")
+        return render(request, "run_fetch_data.html",{"last_refreshed": last_refreshed})
+
+# Fetch CR Data View
+def run_crfetch_data(request):
+    last_refreshed = crLastRefreshed.objects.first()
+    if request.method == "POST":
+        try:
+            # Call the custom management command
+            call_command('crfetch_data')
+            return JsonResponse({"status": "success", "message": "Updated Data fetched successfully!"})
+        except CommandError as e:
+            return JsonResponse({"status": "error", "message": str(e)})
+    else:
+        # Render the HTML template for GET requests
+        return render(request, "run_crfetch_data.html",{"last_refreshed": last_refreshed})
     
 # CR Dashboard View
 def cr_dashboard_view(request):

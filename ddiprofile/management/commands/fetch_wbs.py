@@ -8,7 +8,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         addMthYear = 'MAY2025'  # MMMYYYY format
         delMthYear = 'MAY2025'  # MMMYYYY format
-        sheetname = 'wk4_data'
+        sheetname = 'wk5_data'
 
         # Remove only items where monthyear matches delMthYear
         deleted_count, _ = WBSInformation.objects.filter(monthyear=delMthYear).delete()
@@ -28,7 +28,7 @@ class Command(BaseCommand):
                 employee_name=row['Empl/applname'],
                 workdate=row['Workdate'],
                 effort=row['Effort'],
-                atype=row['A/AType'],
+                atype=row['A/Atype'],
                 atypetext=row['AttAbsTxt'],
                 wbs=row['Receiver WBS element'],
                 description=row['Receiver WBS description'],

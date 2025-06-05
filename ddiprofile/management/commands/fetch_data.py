@@ -1,31 +1,27 @@
 import base64
 import os
+import time
 import requests
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from datetime import datetime
+import pytz
 from django.db import transaction
 from ddiprofile.models import Initiative, ChangeRequest, Feature, UserStory, LastRefreshed
 
 class Command(BaseCommand):
-    help = 'Fetch Initiatives and Epics from Azure DevOps and store them in the database'
+    help = 'Fetch Initiatives from Azure DevOps and store them in the database'
 
     def handle(self, *args, **kwargs):
-        # Clear all records from the All tables
-        Initiative.objects.all().delete()
-        ChangeRequest.objects.all().delete()
-        Feature.objects.all().delete()
-        UserStory.objects.all().delete()
-
+        start_time = time.time()
         organization = 'payerportfolio'
         project_initiatives = 'MES%20(Portfolio)'
         project_epics = 'USHC_AMER_US_ADU_HSP_Ua3'
         pat = 'CByqSGDnGCIxr6qgEBSdxWspYW2Yuuvgq5cdqdlliShNDKYtOnE3JQQJ99BCACAAAAA85jZPAAASAZDO474U'
         url_initiatives = f'https://dev.azure.com/{organization}/{project_initiatives}/_apis/wit/wiql?api-version=7.0'
         url_epics = f'https://dev.azure.com/{organization}/{project_epics}/_apis/wit/wiql?api-version=7.0'
-        # ADO Id of the Parent Play to Initiative |Customer Value: 2584481
         playid = '2584481'
-        testid = '2775737' # ADO Id of My Test Initiative MIKE CLARK TESTING
+        testid = '2775737'
 
         auth_header = base64.b64encode(f":{pat}".encode()).decode()
         headers = {
@@ -45,14 +41,19 @@ class Command(BaseCommand):
             """
         }
 
+        # Track seen IDs for pruning old records
+        seen_initiative_ids = set()
+        seen_changerequest_ids = set()
+        seen_feature_ids = set()
+        seen_userstory_ids = set()
+
         try:
             child_response = requests.post(url_initiatives, headers=headers, json=child_query_payload)
-            child_response.raise_for_status()  # Raise an exception for HTTP errors
+            child_response.raise_for_status()
             work_item_ids = [str(item['id']) for item in child_response.json().get('workItems', [])]
 
             if work_item_ids:
                 initiatives = fetch_work_item_details(organization, project_initiatives, pat, work_item_ids)
-                # Build a lookup for Initiatives by clientaccounts and solutiongotomarket
                 initiative_lookup = {}
                 for initiative_data in initiatives:
                     clientaccounts = initiative_data.get('clientaccounts', '').strip().upper()
@@ -61,7 +62,6 @@ class Command(BaseCommand):
 
                 for initiative_data in initiatives:
                     print(f"Saving Initiative: {initiative_data.get('title')} | Work Item ID: {initiative_data.get('id')}")                    
-                    # Parse dates
                     parsed_start = parse_date(initiative_data.get('start'))
                     parsed_sitstart = parse_date(initiative_data.get('sitstart'))
                     parsed_uatstart = parse_date(initiative_data.get('uatstart'))
@@ -93,8 +93,8 @@ class Command(BaseCommand):
                         id=initiative_data.get('id'),
                         defaults=defaults
                     )
+                    seen_initiative_ids.add(initiative_obj.id)
 
-                # Now, fetch all Change Requests and GAPs for all initiatives
                 cr_query_payload = {
                     "query": f"""
                     SELECT [System.Id]
@@ -117,13 +117,10 @@ class Command(BaseCommand):
 
                     for changerequest_data in changerequests:
                         print(f"Saving {changerequest_data.get('workitemtype')}: {changerequest_data.get('title')} | Work Item ID: {changerequest_data.get('id')}")
-
-                        # Parse dates
                         parsed_targetdate = parse_date(changerequest_data.get('targetdate'))
                         parsed_createddate = parse_date(changerequest_data.get('createddate'))
                         parsed_requiredbydate = parse_date(changerequest_data.get('requiredbydate'))
 
-                        # Prepare defaults for ChangeRequest fields
                         defaults = {
                             'title': changerequest_data.get('title'),
                             'workitemtype': changerequest_data.get('workitemtype'),
@@ -145,30 +142,27 @@ class Command(BaseCommand):
                             'requiredbydate': parsed_requiredbydate,
                         }
 
-                        # Save or update ChangeRequest WITHOUT linking to initiatives yet
                         change_request_instance, created = ChangeRequest.objects.update_or_create(
                             id=changerequest_data.get('id'),
                             defaults=defaults
                         )
-                        # Now, link to all relevant Initiatives (ManyToMany)
+                        seen_changerequest_ids.add(change_request_instance.id)
+
+                        # Link to initiatives
                         cr_client_accounts = [
                             acc.strip().upper() for acc in (changerequest_data.get('clientaccounts') or '').replace(',', ';').split(';') if acc.strip()
                         ]
                         cr_solution_goto_market = (changerequest_data.get('solutiongotomarket') or '').strip().upper()
-
-                        # Find all initiatives that match any client account AND solutiongotomarket
                         q = Q()
                         for acc in cr_client_accounts:
-                            # This will match if the Initiative's clientaccounts contains the account string
                             q |= Q(clientaccounts__icontains=acc)
-
                         initiatives_to_link = Initiative.objects.filter(
                             q,
                             solutiongotomarket__iexact=cr_solution_goto_market
                         )
                         change_request_instance.initiatives.set(initiatives_to_link)
 
-                        # Query to fetch features related to the ChangeRequest/GAP
+                        # Features for this ChangeRequest
                         afeature_query_payload = {
                             "query": f"""
                             SELECT [System.Id]
@@ -181,29 +175,24 @@ class Command(BaseCommand):
                             ORDER BY [System.Title] ASC
                             """
                         }
-
                         afeature_response = requests.post(url_epics, headers=headers, json=afeature_query_payload)
-                        afeature_response.raise_for_status()  # Raise an exception for HTTP errors
+                        afeature_response.raise_for_status()
                         afeature_work_item_ids = [str(item['id']) for item in afeature_response.json().get('workItems', [])]
 
                         if afeature_work_item_ids:
                             features = fetch_work_item_details(organization, project_epics, pat, afeature_work_item_ids)
                             for feature_data in features:
-                                # Debugging: Log Feature Details before saving
                                 print(f"Saving Feature: {feature_data.get('title')} | Work Item ID: {feature_data.get('id')}")
-                                # Parse dates
                                 parsed_targetdate = parse_date(feature_data.get('targetdate'))
                                 parsed_startdate = parse_date(feature_data.get('startdate'))
                                 parsed_createddate = parse_date(feature_data.get('createddate'))
-
-                                # Update or create Feature
                                 feature_defaults = {
                                     'title': feature_data.get('title'),
                                     'workitemtype': feature_data.get('workitemtype'),
                                     'state': feature_data.get('state') or 'Unknown',
                                     'areapath': feature_data.get('areapath'),
                                     'iterationpath': feature_data.get('iterationpath'),
-                                    'clientaccounts':feature_data.get('clientaccounts'),
+                                    'clientaccounts': feature_data.get('clientaccounts'),
                                     'solutiongotomarket': feature_data.get('solutiongotomarket'),
                                     'targetdate': parsed_targetdate,
                                     'startdate': parsed_startdate,
@@ -222,15 +211,15 @@ class Command(BaseCommand):
                                     id=feature_data.get('id'),
                                     defaults=feature_defaults
                                 )
+                                seen_feature_ids.add(feature_instance.id)
 
-                                # Fetch User Story children for the Feature
-                                user_stories = fetch_user_story_children(organization, project_epics, pat,[feature_instance.id])
+                                # User Stories for this Feature
+                                user_stories = fetch_user_story_children(organization, project_epics, pat, [feature_instance.id])
                                 if user_stories:
                                     for user_story_data in user_stories:
-                                        # Parse dates
                                         parsed_createddate = parse_date(user_story_data.get('createddate'))
                                         print(f"  Saving User Story: {user_story_data.get('id')} | {user_story_data.get('title')}")
-                                        UserStory.objects.update_or_create(
+                                        user_story_instance, created = UserStory.objects.update_or_create(
                                             id=user_story_data.get('id'),
                                             defaults={
                                                 'title': user_story_data.get('title'),
@@ -251,20 +240,32 @@ class Command(BaseCommand):
                                                 'feature_related': feature_instance
                                             }
                                         )
+                                        seen_userstory_ids.add(user_story_instance.id)
 
         except requests.exceptions.RequestException as e:
             print(f"Error fetching data from Azure DevOps: {e}")
 
-        # Update the LastRefreshed model
-        now = datetime.now()
+        # Prune: Delete any records not seen during this fetch
+        Initiative.objects.exclude(id__in=seen_initiative_ids).delete()
+        ChangeRequest.objects.exclude(id__in=seen_changerequest_ids).delete()
+        Feature.objects.exclude(id__in=seen_feature_ids).delete()
+        UserStory.objects.exclude(id__in=seen_userstory_ids).delete()
+
+        # Update the LastRefreshed model (timezone-aware)
+        now_utc = datetime.now(pytz.utc)
+        eastern = pytz.timezone('US/Eastern')
+        now = now_utc.astimezone(eastern)
         LastRefreshed.objects.update_or_create(
             id=1,
             defaults={
                 'title': now.strftime("%Y-%m-%d %H:%M:%S")
             }
         )
-        # Retrieve the updated title from the model and log it
         last_refreshed = LastRefreshed.objects.get(id=1)
+        end_time = time.time()
+        duration = end_time - start_time
+        mins, secs = divmod(duration, 60)
+        self.stdout.write(f"Script duration: {int(mins)} min {secs:.2f} sec")
         self.stdout.write(f'Updated LastRefreshed model: {last_refreshed.title} EST')
 
 # Function to parse date strings into datetime.date objects

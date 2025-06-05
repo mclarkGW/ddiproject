@@ -1,9 +1,10 @@
 import requests
 import base64
 from datetime import datetime
+import time
+import pytz
 from django.core.management.base import BaseCommand
 from ddiprofile.models import Iteration
-
 
 # Azure DevOps settings
 ORGANIZATION = 'payerportfolio'
@@ -16,15 +17,25 @@ class Command(BaseCommand):
     help = "Fetch all iterations from Azure DevOps (project-wide) and store them in the database"
 
     def handle(self, *args, **kwargs):
-        # Clear all records from the Iteration table
-        Iteration.objects.all().delete()
+        start_time = time.time()
+        # No more Iteration.objects.all().delete()!
 
         iterations = self.fetch_all_iterations()
+        seen_iteration_ids = set()
         if iterations:
-            self.save_iterations_to_db(iterations)
+            seen_iteration_ids = self.save_iterations_to_db(iterations)
             self.stdout.write(self.style.SUCCESS(f"Successfully fetched and saved {len(iterations)} iterations."))
         else:
             self.stdout.write(self.style.WARNING("No iterations found or failed to fetch iterations."))
+
+        # Prune (delete) iterations not seen in this run
+        Iteration.objects.exclude(iteration_id__in=seen_iteration_ids).delete()
+
+        # Print duration
+        end_time = time.time()
+        duration = end_time - start_time
+        mins, secs = divmod(duration, 60)
+        self.stdout.write(self.style.SUCCESS(f"Script duration: {int(mins)} min {secs:.2f} sec"))
 
     def fetch_all_iterations(self):
         """Fetch all iterations from Azure DevOps using Classification Nodes API"""
@@ -73,6 +84,10 @@ class Command(BaseCommand):
         return iterations
 
     def save_iterations_to_db(self, iterations):
+        now_utc = datetime.now(pytz.utc)
+        eastern = pytz.timezone('US/Eastern')
+        now = now_utc.astimezone(eastern)
+        seen_iteration_ids = set()
         """Save iterations to the database"""
         for iteration in iterations:
             iteration_id = iteration.get("id")
@@ -94,11 +109,13 @@ class Command(BaseCommand):
                     "path": path,
                     "start_date": start_date,
                     "finish_date": finish_date,
-                    "scriptupdated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    "scriptupdated": now.strftime("%Y-%m-%d %H:%M:%S")
                 }
             )
+            seen_iteration_ids.add(iteration_id)
 
             if created:
                 self.stdout.write(self.style.SUCCESS(f"Created new iteration: {name}"))
             else:
                 self.stdout.write(self.style.SUCCESS(f"Updated existing iteration: {name}"))
+        return seen_iteration_ids
