@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np # <-- add this import
 from ddiprofile.models import WBSInformation
 from django.core.management.base import BaseCommand
 
@@ -6,22 +7,23 @@ class Command(BaseCommand):
     help = 'Fetch WBS data from an Excel file and save it to the database'
 
     def handle(self, *args, **options):
-        addMthYear = 'MAY2025'  # MMMYYYY format
-        delMthYear = 'MAY2025'  # MMMYYYY format
+        addMthYear = 'MAY2025'
+        delMthYear = 'MAY2025'
         sheetname = 'wk5_data'
 
-        # Remove only items where monthyear matches delMthYear
         deleted_count, _ = WBSInformation.objects.filter(monthyear=delMthYear).delete()
         print(f"Deleted {deleted_count} existing rows with monthyear = {delMthYear}")
 
-        # Load Excel
         df = pd.read_excel(r"C:\Users\mclark80\Downloads\CATSExports\05_CATSReport_2025.xlsx", sheet_name=sheetname)
 
-        # Save each row where workdescription != "NOT REQUIRED"
         for _, row in df.iterrows():
-            workdescription = str(row['Work Description']).strip()
-            if workdescription.upper() == "NOT REQUIRED":
-                continue  # Skip rows where workdescription is NOT REQUIRED
+            workdescription_raw = row['Work Description']
+            # Check for NaN, None, empty, or "NOT REQUIRED"
+            if pd.isna(workdescription_raw):
+                continue
+            workdescription = str(workdescription_raw).strip()
+            if not workdescription or workdescription.upper() == "NOT REQUIRED":
+                continue  # skip blanks and "NOT REQUIRED"
 
             WBSInformation.objects.create(
                 employee_id=row['PersNo'],
