@@ -1,46 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}Project Iterations{% endblock %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Project Iterations</title>
 
-    <!-- Link Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Link Bootstrap Icons for chevron icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/css/bootstrap-datepicker.min.css" rel="stylesheet">
-    <!-- Link Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Link Bootstrap JS for interactive components -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Select all accordion items
-        const accordionItems = document.querySelectorAll('.accordion-item');
-
-        accordionItems.forEach(item => {
-            const button = item.querySelector('.accordion-button');
-            const collapse = item.querySelector('.accordion-collapse');
-            const icon = button.querySelector('i');
-
-            // Add event listener for when the accordion is expanded
-            collapse.addEventListener('show.bs.collapse', () => {
-                icon.classList.remove('bi-chevron-down');
-                icon.classList.add('bi-chevron-up'); // Change to "up" icon when expanded
-            });
-
-            // Add event listener for when the accordion is collapsed
-            collapse.addEventListener('hide.bs.collapse', () => {
-                icon.classList.remove('bi-chevron-up');
-                icon.classList.add('bi-chevron-down'); // Change to "down" icon when collapsed
-            });
-        });
-    });
-</script>
 {% block content %}
 
 <div class="container">
@@ -100,4 +61,31 @@
         <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ iteration_last_refreshed.scriptupdated }} EST</span>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Select all accordion items
+        const accordionItems = document.querySelectorAll('.accordion-item');
+
+        accordionItems.forEach(item => {
+            const button = item.querySelector('.accordion-button');
+            const collapse = item.querySelector('.accordion-collapse');
+            const icon = button.querySelector('i');
+
+            // Add event listener for when the accordion is expanded
+            collapse.addEventListener('show.bs.collapse', () => {
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-up'); // Change to "up" icon when expanded
+            });
+
+            // Add event listener for when the accordion is collapsed
+            collapse.addEventListener('hide.bs.collapse', () => {
+                icon.classList.remove('bi-chevron-up');
+                icon.classList.add('bi-chevron-down'); // Change to "down" icon when collapsed
+            });
+        });
+    });
+</script>
 {% endblock %}
