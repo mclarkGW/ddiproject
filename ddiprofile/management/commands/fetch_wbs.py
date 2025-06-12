@@ -7,14 +7,14 @@ class Command(BaseCommand):
     help = 'Fetch WBS data from an Excel file and save it to the database'
 
     def handle(self, *args, **options):
-        addMthYear = 'MAY2025'
-        delMthYear = 'MAY2025'
-        sheetname = 'wk5_data'
+        addMthYear = 'JUN2025'
+        delMthYear = 'JUN2025'
+        sheetname = 'wk1_data'
 
         deleted_count, _ = WBSInformation.objects.filter(monthyear=delMthYear).delete()
         print(f"Deleted {deleted_count} existing rows with monthyear = {delMthYear}")
 
-        df = pd.read_excel(r"C:\Users\mclark80\Downloads\CATSExports\05_CATSReport_2025.xlsx", sheet_name=sheetname)
+        df = pd.read_excel(r"C:\Users\mclark80\Downloads\CATSExports\06_CATSReport_2025.xlsx", sheet_name=sheetname)
 
         for _, row in df.iterrows():
             workdescription_raw = row['Work Description']

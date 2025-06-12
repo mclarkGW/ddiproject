@@ -2,6 +2,10 @@
 {% block title %}CR Charts{% endblock %}
 
 {% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CR Charts</title>
 <style>
     .cr-dash-header {
         text-align: center;
@@ -59,38 +63,12 @@
         background: #138496;
         color: #fff;
     }
-    .cr-dash-filter-area {
-        background: #eafaf4;
-        border: 1.5px solid #17a2b8;
-        border-radius: 8px;
-        padding: 0.75rem 1.2rem;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1.1rem;
-        max-width: 450px;
-    }
-    .cr-dash-filter-label {
-        font-weight: 700;
-        color: #106e6e;
-        font-size: 1.07em;
-        margin-right: 0.7em;
-    }
-    .cr-dash-filter-dropdown {
-        min-width: 130px;
-        font-size: 1em;
-        padding: 6px 12px;
-        border-radius: 4px;
-        border: 1px solid #17a2b8;
-        background: #fff;
-        color: #29343b;
-        transition: border 0.15s;
-    }
     .cr-dash-filter-dropdown:focus {
         border-color: #138496;
         outline: none;
     }
 </style>
+</head>
 <div class="cr-dash-header">Change Request Charts</div>
 <div class="cr-dash-toolbar">
     <a href="{% url 'crdashboard' %}" style="text-decoration: none;">

@@ -4,6 +4,10 @@
 {% block title %}CR Dashboard{% endblock %}
 
 {% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CR Dashboard</title>
 <style>
     :root {
         --table-main-bg: #eafaf4;
@@ -22,14 +26,6 @@
         --table-task-border: #e57373;      /* soft red for border */
         --table-task-header: #ffe5e0;      /* even lighter red for header */
         --modern-shadow: 0 2px 12px 0 rgba(0,0,0,0.08);
-    }
-    .dash-title {
-        text-align: center;
-        font-size: 2.7rem;
-        font-weight: 600;
-        margin: 1.2rem 0 1.7rem 0;
-        color: #2B3A44;
-        letter-spacing: 1px;
     }
     .table-main th,
     .table-cr th,
@@ -163,7 +159,6 @@
     }
     .expand-btn { cursor: pointer; font-weight: bold; width: 28px; min-width: 28px; text-align: center; }
     .badge-client { font-size: 0.6em; padding: 1px 3px; margin-right: 2px; margin-bottom: 1px; background-color:rgb(157, 158, 158); color: #fff; border-radius: 6px; font-weight: 400; letter-spacing: 0.01em; vertical-align: middle; display: inline-block; line-height: 1.2; }
-    .custom-titletext { display: block; white-space: normal; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; max-height: calc(1.2em * 2); text-align: left; }
     .hidden { display: none; }
     [data-tooltip] { position: relative; cursor: pointer; }
     [data-tooltip]:hover::after {
@@ -189,16 +184,6 @@
     .table-cr thead th { top: 104px; }
     .table-feature thead th { top: 133px; }
     .table-userstory thead th { top: 158px; }
-    .badge-gap {
-        background: #e3f0ff;
-        color: #1565c0;
-        border: 1px solid #bbdefb;
-    }
-    .badge-cr {
-        background: #ffe7e6;
-        color: #b71c1c;
-        border: 1px solid #ffcdd2;
-    }
     .table-main th.col-end,
     .table-main td.col-end {
         border-right: 2.5px solid #aaa;
@@ -225,8 +210,8 @@
         margin-left: 0.5rem;
     }
     .cr-dash-btn {
-        padding: 10px 22px;
-        font-size: 1.1em;
+        padding: 7px 19px;
+        font-size: 1em;
         background: #17a2b8;
         color: white;
         border: none;
@@ -238,43 +223,121 @@
         box-shadow: 0 2px 8px 0 rgba(23,162,184,0.11);
         transition: background 0.15s;
         text-decoration: none;
+        min-width: 68px;
     }
     .cr-dash-btn:hover {
         background: #138496;
         color: #fff;
     }
-    .cr-dash-filter-area {
-        background: #eafaf4;
-        border: 1.5px solid #17a2b8;
-        border-radius: 8px;
-        padding: 0.75rem 1.2rem;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1.1rem;
-        width: 750px;
-    }
     .cr-dash-filter-label {
         font-weight: 700;
         color: #106e6e;
-        font-size: 1.07em;
-        margin-right: 0.7em;
+        font-size: 0.97em;
     }
     .cr-dash-filter-dropdown {
-        min-width: 130px;
-        font-size: 1em;
-        padding: 6px 12px;
+        min-width: 110px;
+        font-size: 0.96em;
+        padding: 3px 7px;
         border-radius: 4px;
         border: 1px solid #17a2b8;
         background: #fff;
         color: #29343b;
-        transition: border 0.15s;
+        margin-top: 2px;
+        margin-bottom: 0;
+        height: 2em;
+        max-width: 145px;
     }
     .cr-dash-filter-dropdown:focus {
         border-color: #138496;
         outline: none;
     }
+    .cr-dash-filter-dropdown[multiple] {
+        height: 120px;
+        min-width: 110px;
+        max-width: 145px;
+    }
+    .cr-dash-filter-area-two-col {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #eafaf4;
+        border: 1.5px solid #17a2b8;
+        border-radius: 8px;
+        padding: 0.7rem 0.7rem 0.7rem 0.7rem;
+        margin-bottom: 1.2rem;
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        font-size: 0.93em;
+        box-sizing: border-box;
+    }
+    .cr-dash-filter-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+    .cr-dash-filter-cols {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-end; /* pin badge to bottom */
+        gap: 1.5rem;
+        width: 100%;
+    }
+    .cr-dash-filter-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        min-width: 165px;
+        height: 170px;
+        font-size: 0.97em;
+    }
+    .cr-dash-filter-label-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.22rem;
+        font-size: 0.95em;
+    }
+    .cr-dash-filter-badge-row {
+        margin-top: 0.4rem;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        font-size: 0.88em;
+    }
+    .cr-dash-filter-buttons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 30px;
+        gap: 15px;
+    }
+    .filter-toggle-btn {
+        background: #fff;
+        color: #17a2b8;
+        border: 2px solid #17a2b8;
+        border-radius: 50%;
+        padding: 10px 14px;
+        font-size: 1.4em;
+        box-shadow: 0 2px 6px 0 rgba(23,162,184,0.13);
+        transition: background 0.18s, color 0.18s, border 0.18s;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+    }
+    .filter-toggle-btn:hover, .filter-toggle-btn:focus {
+        background: #17a2b8;
+        color: #fff;
+        border: 2px solid #10898b;
+        cursor: pointer;
+    }
 </style>
+</head>
 <script>
     function toggleRow(rowId, toggleId) {
         var row = document.getElementById(rowId);
@@ -300,52 +363,28 @@
             expandBtn.innerHTML = '+';
         }
     }
-    function filterMainCRs() {
-        var filter = document.getElementById("mainCrStateFilter").value;
-        var badge = document.getElementById("filtered-badge-main");
-        var rows = document.querySelectorAll("tr.cr-row");
-        var inProgressStates = ['committed', 'in-progress', 'blocked'];
-        var proposedStates = ['funnel', 'reviewing', 'analyzing', 'backlog'];
-
-        // Show badge if filter is applied
-        if (filter && filter !== "") {
-            badge.style.display = "";
-        } else {
-            badge.style.display = "none";
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.getElementById('toggle-filter-btn');
+        const filterDiv = document.getElementById('filter-container');
+        let visible = true;
+        function updateBtn() {
+            if (visible) {
+                btn.title = "Hide Filters";
+                btn.setAttribute("aria-label", "Hide Filters");
+                btn.innerHTML = '<i class="bi bi-funnel"></i> <span class="btn-title">Hide Filter</span>';
+            } else {
+                btn.title = "Show Filters";
+                btn.setAttribute("aria-label", "Show Filters");
+                btn.innerHTML = '<i class="bi bi-funnel"></i> <span class="btn-title">Show Filter</span>';
+            }
         }
-
-        rows.forEach(function(row) {
-            var rowState = row.getAttribute("data-state");
-            // Always show if filter is "Show All"
-            if (!filter || filter === "") {
-                row.style.display = "";
-            }
-            // Hide Done Items
-            else if (filter === "HideDone") {
-                if (rowState === "done") {
-                    row.style.display = "none";
-                } else {
-                    row.style.display = "";
-                }
-            }
-            // Show Only In Progress
-            else if (filter === "InProgress") {
-                if (inProgressStates.includes(rowState)) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            }
-            // Show Only Proposed
-            else if (filter === "Proposed") {
-                if (proposedStates.includes(rowState)) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            }
+        btn.addEventListener('click', function() {
+            visible = !visible;
+            filterDiv.style.display = visible ? 'block' : 'none';
+            updateBtn();
         });
-    }
+        updateBtn();
+    });
 </script>
 <div class="cr-dash-header">Change Request Dashboard</div>
         <div class="cr-dash-toolbar">
@@ -355,20 +394,98 @@
                     View CR Charts
                 </button>
             </a>
+            <button id="toggle-filter-btn" class="btn btn-warning" title="Hide Filters" aria-label="Hide Filters">
+                <i class="bi bi-funnel"></i> <span class="btn-title">Hide Filter</span>
+            </button>
         </div>
-            <div class="cr-dash-filter-area">
-                <span class="cr-dash-filter-label">Filter by Change Request State:</span>
-                <select id="mainCrStateFilter" class="cr-dash-filter-dropdown" onchange="filterMainCRs()">
-                    <option value="">Show All CRs</option>
-                    <option value="HideDone">Hide Done CRs</option>
-                    <option value="InProgress">Show In Progress CRs</option>
-                    <option value="Proposed">Show Proposed CRs</option>
-                </select>
-                <span id="filtered-badge-main" class="badge bg-warning text-dark ml-2" style="display:none; font-size:0.8em;">
-                    Filtered
-                </span>
+
+<div id="filter-container">
+    <div class="cr-dash-filter-area-two-col">
+        <form method="get" id="crFilterForm" class="cr-dash-filter-form">
+            <div class="cr-dash-filter-cols">
+                <!-- Client Account column FIRST -->
+                <div class="cr-dash-filter-col">
+                    <div class="cr-dash-filter-label-row">
+                        <span class="cr-dash-filter-label">Client Account:</span>
+                        <select name="client_account" id="clientAccountFilter" class="cr-dash-filter-dropdown" multiple style="min-width: 150px;" multiple size="7">
+                            <option value="__all__" {% if not selected_client_accounts or "__all__" in selected_client_accounts %}selected{% endif %}>Show All</option>
+                            {% for acc in all_client_accounts %}
+                                <option value="{{ acc }}" {% if acc in selected_client_accounts %}selected{% endif %}>{{ acc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="cr-dash-filter-badge-row">
+                        {% if selected_client_accounts and not "__all__" in selected_client_accounts %}
+                        <span class="badge bg-warning text-dark mt-1" style="font-size:0.96em;">
+                            <i class="bi bi-filter-circle" style="margin-right: 4px;"></i>
+                            Filter: {{ selected_client_accounts|join:", " }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Module column SECOND -->
+                <div class="cr-dash-filter-col">
+                    <div class="cr-dash-filter-label-row">
+                        <span class="cr-dash-filter-label">Module:</span>
+                        <select name="module" id="moduleFilter" class="cr-dash-filter-dropdown" multiple style="min-width: 150px;" size="7">
+                            <option value="__all__" {% if not selected_modules or "__all__" in selected_modules %}selected{% endif %}>Show All</option>
+                            {% for mod in all_modules %}
+                                <option value="{{ mod }}" {% if mod in selected_modules %}selected{% endif %}>{{ mod }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="cr-dash-filter-badge-row">
+                        {% if selected_modules and not "__all__" in selected_modules %}
+                        <span class="badge bg-warning text-dark mt-1" style="font-size:0.96em;">
+                            <i class="bi bi-filter-circle" style="margin-right: 4px;"></i>
+                            Filter: {{ selected_modules|join:", " }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- State column THIRD -->
+                <div class="cr-dash-filter-col">
+                    <div class="cr-dash-filter-label-row">
+                        <span class="cr-dash-filter-label">State:</span>
+                        <select name="cr_state" id="mainCrStateFilter" class="cr-dash-filter-dropdown">
+                            <option value="">Show All</option>
+                            <option value="HideDone" {% if selected_state == "HideDone" %}selected{% endif %}>Hide Done</option>
+                            <option value="InProgress" {% if selected_state == "InProgress" %}selected{% endif %}>In Progress</option>
+                            <option value="Proposed" {% if selected_state == "Proposed" %}selected{% endif %}>Proposed</option>
+                        </select>
+                    </div>
+                    <div class="cr-dash-filter-badge-row">
+                        {% if selected_state and selected_state != "" %}
+                        <span class="badge bg-warning text-dark mt-1" style="font-size:0.96em;">
+                            <i class="bi bi-filter-circle" style="margin-right: 4px;"></i>
+                            Filter: 
+                            {% if selected_state == "HideDone" %}
+                                Hide Done
+                            {% elif selected_state == "InProgress" %}
+                                In Progress
+                            {% elif selected_state == "Proposed" %}
+                                Proposed
+                            {% else %}
+                                {{ selected_state }}
+                            {% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-    <div>
+            <div class="cr-dash-filter-buttons">
+                <button type="submit" class="badge bg-primary">
+                    <i class="bi bi-check-lg"></i> Apply Filter(s)
+                </button>
+                <button type="button" class="badge bg-danger"
+                    onclick="window.location.href='{{ request.path }}';">
+                    <i class="bi bi-x-lg"></i> Clear Filter(s)
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+        
     <table class="table-main">
         <thead>
             <tr>
@@ -410,9 +527,9 @@
                 <td class="expand-btn" id="expand-btn-cr-{{ cr.id }}" onclick="toggleRow('features-{{ cr.id }}', 'expand-btn-cr-{{ cr.id }}')">
                     {% if cr.features.all %}+{% else %}&nbsp;{% endif %}
                 </td>
-                <td class="custom-relatedwidth">{% if cr.features.all %}<span class="badge text-bg-light">{{ cr.features.count }}</span>{% endif %}</td>
+                <td title="{{ cr.features.count }}"class="custom-relatedwidth">{% if cr.features.all %}<span class="badge text-bg-light">{{ cr.features.count }}</span>{% endif %}</td>
                 <td title="{{ cr.tt_workdescription }}">
-                <span class="custom-contractidwidth badge text-bg-light">{{ cr.tt_workdescription }}</span>
+                    <span class="custom-contractidwidth badge text-bg-light">{{ cr.tt_workdescription }}</span>
                 </td>
                 <td class="text-left">
                     <span class="badge text-bg-light">
@@ -443,7 +560,7 @@
                         {% endif %}
                     {% endfor %}
                 </td>
-                <td class="text-center"><span class="badge text-bg-light">{{ cr.targetdate|date:"m/d/y"|default:"" }}</span></td>
+                <td title="Target Date - {{ cr.targetdate }}" class="text-center"><span class="badge text-bg-light">{{ cr.targetdate|date:"m/d/y"|default:"" }}</span></td>
                 <td class="text-center"><span class="badge text-bg-light">{{ cr.pi_start|date:"m/d/y"|default:"" }}</span></td>
                 <td class="text-center"><span class="badge text-bg-light">{{ cr.pi_end|date:"m/d/y"|default:"" }}</span></td>
                 <td class="text-center">
@@ -674,8 +791,15 @@
         </tbody>
     </table>
     <div style="text-align: center; padding: 10px;">
-        <span class="badge text-bg-primary">Last Refreshed: </span>
-        <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ last_refreshed.title }} EST</span>
+            <span class="badge text-bg-primary">Last Refreshed:</span>
+            <span class="badge text-bg-secondary" style="margin-left: 5px;" id="last-refreshed-local"></span>
+        </div>
+        <script>
+            // Get the UTC datetime string from Django (replace with your field if different)
+            var utcString = "{{ last_refreshed.title }} GMT";
+            var date = new Date(utcString);
+            document.getElementById('last-refreshed-local').textContent = date.toString();
+        </script>
     </div>
 </div>
 {% endblock %}

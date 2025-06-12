@@ -258,7 +258,7 @@ class Command(BaseCommand):
         LastRefreshed.objects.update_or_create(
             id=1,
             defaults={
-                'title': now.strftime("%Y-%m-%d %H:%M:%S")
+                'title': now_utc.strftime("%Y-%m-%d %H:%M:%S")
             }
         )
         last_refreshed = LastRefreshed.objects.get(id=1)

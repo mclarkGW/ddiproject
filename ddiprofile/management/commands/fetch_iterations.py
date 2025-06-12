@@ -109,7 +109,7 @@ class Command(BaseCommand):
                     "path": path,
                     "start_date": start_date,
                     "finish_date": finish_date,
-                    "scriptupdated": now.strftime("%Y-%m-%d %H:%M:%S")
+                    "scriptupdated": now_utc.strftime("%Y-%m-%d %H:%M:%S")
                 }
             )
             seen_iteration_ids.add(iteration_id)

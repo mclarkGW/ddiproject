@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import dashboard_view, cr_charts_view
+from .views import dashboard_view, cr_charts_view, gap_charts_view
 
 
 urlpatterns = [
@@ -13,10 +13,14 @@ urlpatterns = [
     path('run-fetch-iterations/', views.run_fetch_iterations, name='run_fetch_iterations'),
 # URL for Fetch DDI Data
     path('run-fetch-data/', views.run_fetch_data, name='run_fetch_data'),
-    # URL for Fetch CR Data
+# URL for Fetch CR Data
     path('run-crfetch-data/', views.run_crfetch_data, name='run_crfetch_data'),
 # URL for CR Dashboard
     path('crdashboard/', views.cr_dashboard_view, name='crdashboard'),
 # URL for CR Charts
     path('crcharts/', cr_charts_view, name='crcharts'),
+# URL for GAP Dashboard
+    path('gapdashboard/', views.gap_dashboard_view, name='gapdashboard'),
+# URL for GAP Charts
+    path('gapcharts/', gap_charts_view, name='gapcharts'),
 ]

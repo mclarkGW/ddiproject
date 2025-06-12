@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}GAP Charts{% endblock %}
+
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAP Charts</title>
+<style>
+    .cr-dash-header {
+        text-align: center;
+        font-size: 3rem;
+        font-weight: 800;
+        color: #29343b;
+        margin-top: 2.5rem;
+        margin-bottom: 1.2rem;
+        letter-spacing: 1.5px;
+        border-bottom: 4px solid #1dc7b2;
+        display: inline-block;
+        padding-bottom: 0.4rem;
+        box-shadow: 0 6px 12px -10px #1dc7b2;
+    }
+    .cr-dash-chart-title {
+        text-align: center;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #10898b;
+        margin-bottom: 0.7rem;
+        margin-top: 0;
+        letter-spacing: 0.5px;
+        border-bottom: 2.5px solid #b7e4c7;
+        display: inline-block;
+        padding-bottom: 0.2rem;
+        box-shadow: 0 2px 6px -5px #b7e4c7;
+        width: 100%;
+        background: #eafaf4;
+        border-radius: 6px 6px 0 0;
+    }
+    .cr-dash-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        margin-left: 0.5rem;
+    }
+    .cr-dash-btn {
+        padding: 10px 22px;
+        font-size: 1.1em;
+        background: #17a2b8;
+        color: white;
+        border: none;
+        border-radius: 7px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 8px 0 rgba(23,162,184,0.11);
+        transition: background 0.15s;
+        text-decoration: none;
+    }
+    .cr-dash-btn:hover {
+        background: #138496;
+        color: #fff;
+    }
+    .cr-dash-filter-dropdown:focus {
+        border-color: #138496;
+        outline: none;
+    }
+</style>
+</head>
+<div class="cr-dash-header">GAP Charts</div>
+<div class="cr-dash-toolbar">
+    <a href="{% url 'gapdashboard' %}" style="text-decoration: none;">
+        <button class="cr-dash-btn">
+            <i class="bi bi-bar-chart-steps" style="font-size: 1.2em; margin-right: 6px;"></i>
+            View GAP Dashboard
+        </button>
+    </a>
+</div>
+<div style="display: flex; gap: 30px;">
+    <div style="flex: 1;">
+        <div class="cr-dash-chart-title">GAPs by Release</div>
+        <canvas id="crsByReleaseChart" width="500" height="300"></canvas>
+    </div>
+    <div style="flex: 1;">
+        <div class="cr-dash-chart-title">GAPs by Account</div>
+        <canvas id="crsByAccountChart" width="500" height="300"></canvas>
+    </div>
+    <div style="flex: 1;">
+        <div class="cr-dash-chart-title">GAPs by Status</div>
+        <canvas id="crsByStatusChart" width="500" height="300"></canvas>
+    </div>
+</div>
+<br>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function makeBarChart(canvasId, labels, data, color) {
+    var ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '',
+                data: data,
+                backgroundColor: color,
+                borderColor: color,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false }},
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+makeBarChart(
+    'crsByReleaseChart',
+    {{ release_labels|safe }},
+    {{ release_data|safe }},
+    'rgba(130, 204, 77, 0.7)'
+);
+makeBarChart(
+    'crsByAccountChart',
+    {{ account_labels|safe }},
+    {{ account_data|safe }},
+    'rgba(77, 172, 204, 0.7)'
+);
+makeBarChart(
+    'crsByStatusChart',
+    {{ status_labels|safe }},
+    {{ status_data|safe }},
+    'rgba(130, 204, 77, 0.7)'
+);
+</script>
+{% endblock %}

@@ -141,10 +141,16 @@
             </div>
         </div>
     </div>
-    </div>
         <div style="text-align: center; padding: 10px;">
-        <span class="badge text-bg-primary">Data Last Refreshed: </span>
-        <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ last_refreshed.title }} EST</span>
+            <span class="badge text-bg-primary">Last Refreshed:</span>
+            <span class="badge text-bg-secondary" style="margin-left: 5px;" id="last-refreshed-local"></span>
+        </div>
+        <script>
+            // Get the UTC datetime string from Django (replace with your field if different)
+            var utcString = "{{ last_refreshed.title }} GMT";
+            var date = new Date(utcString);
+            document.getElementById('last-refreshed-local').textContent = date.toString();
+        </script>
     </div>
 
     <!-- Bootstrap JS (optional, for enhanced interactivity) -->

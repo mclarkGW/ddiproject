@@ -5,6 +5,10 @@
 {% block title %}DDI Dashboard{% endblock %}
 
 {% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDI Dashboard</title>
 <style>
     :root {
         --table-main-bg: #eafaf4;
@@ -214,6 +218,7 @@
         box-shadow: 0 6px 12px -10px #00EEAE;
     }
 </style>
+</head>
 <script>
     function toggleRow(rowId, toggleId) {
         var row = document.getElementById(rowId);
@@ -298,31 +303,31 @@
                 <td title="{{ initiative.title }}">
                     <span class="custom-titlewidth badge text-bg-light">{{ initiative.title }}</span>
                 </td>
-                <td class="custom-clientwidth text-truncate"><span class="badge text-bg-light">{{ initiative.clientaccounts }}</span></td>
-                <td><span class="badge text-bg-light">{{ initiative.solutiongotomarket }}</span></td>
-                <td><span class="badge text-bg-light">{{ initiative.deliverysupportleader }}</span></td>
-                <td><span class="badge text-bg-light">{{ initiative.deliverysupportseniorleader }}</span></td>
-                <td><span class="badge text-bg-light">{{ initiative.deliverysupportdirector }}</span></td>
-                <td><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
-                <td class="text-center"><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
-                <td><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
-                <td><span class="badge text-bg-light">{{ initiative.sitend|date:"m/d/y"|default:""  }}</span></td>
-                <td>{% if initiative.sitcmpl %}
+                <td title="Client Account - {{ initiative.clientaccounts }}" class="custom-clientwidth text-truncate"><span class="badge text-bg-light">{{ initiative.clientaccounts }}</span></td>
+                <td title="Solution GTM - {{ initiative.solutiongotomarket }}"><span class="badge text-bg-light">{{ initiative.solutiongotomarket }}</span></td>
+                <td title="Delivery Support Leader - {{ initiative.deliverysupportleader }}"><span class="badge text-bg-light">{{ initiative.deliverysupportleader }}</span></td>
+                <td title="Delivery Support Senior Leader - {{ initiative.deliverysupportseniorleader }}"><span class="badge text-bg-light">{{ initiative.deliverysupportseniorleader }}</span></td>
+                <td title="Delivery Support Director - {{ initiative.deliverysupportdirector }}"><span class="badge text-bg-light">{{ initiative.deliverysupportdirector }}</span></td>
+                <td title="Start Date - {{ initiative.start }}"><span class="badge text-bg-light">{{ initiative.start|date:"m/d/y"|default:"" }}</span></td>
+                <td title="{{ initiative.months }} Month Duration" class="text-center"><span class="badge text-bg-light">{{ initiative.months|default:""  }}</span></td>
+                <td title="SIT Start -  {{ initiative.sitstart }}"><span class="badge text-bg-light">{{ initiative.sitstart|date:"m/d/y"|default:""  }}</span></td>
+                <td title="SIT End - {{ initiative.sitend }}"><span class="badge text-bg-light">{{ initiative.sitend|date:"m/d/y"|default:""  }}</span></td>
+                <td title="SIT % Complete - {{ initiative.sitcmpl }}%">{% if initiative.sitcmpl %}
                     <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.sitcmpl }}%" aria-valuemin="0" aria-valuemax="100">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.sitcmpl }}%">{{ initiative.sitcmpl }}%</div>
                     </div>
                     {% endif %}
                 </td>
-                <td><span class="badge text-bg-light">{{ initiative.uatstart|date:"m/d/y"|default:""  }}</span></td>
-                <td><span class="badge text-bg-light">{{ initiative.uatend|date:"m/d/y"|default:""  }}</span></td>
-                <td>{% if initiative.uatcmpl %}
+                <td title="UAT Start - {{ initiative.uatstart }}"><span class="badge text-bg-light">{{ initiative.uatstart|date:"m/d/y"|default:""  }}</span></td>
+                <td title="UAT End - {{ initiative.uatend }}"><span class="badge text-bg-light">{{ initiative.uatend|date:"m/d/y"|default:""  }}</span></td>
+                <td title="UAT % Complete - {{ initiative.uatcmpl }}%">{% if initiative.uatcmpl %}
                     <div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="{{ initiative.uatcmpl }}%" aria-valuemin="0" aria-valuemax="100">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {{ initiative.uatcmpl }}%">{{ initiative.uatcmpl }}%</div>
                     </div>
                     {% endif %}
                 </td>
-                <td><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
-                <td class="text-center">
+                <td title="Go-Live Date - {{ initiative.golivedate }}"><span class="badge text-bg-light">{{ initiative.golivedate|date:"m/d/y"|default:""   }}</span></td>
+                <td title="Current Phase - {{ initiative.currentphase }}"class="text-center">
                     <span class="badge
                         {% if initiative.currentphase == '1. Pre-Start' %}text-bg-secondary
                         {% elif initiative.currentphase == '2. RVS' %}text-bg-info
@@ -589,8 +594,14 @@
         </tbody>
     </table>
     <div style="text-align: center; padding: 10px;">
-        <span class="badge text-bg-primary">Last Refreshed: </span>
-        <span class="badge text-bg-secondary" style="margin-left: 5px;">{{ last_refreshed.title }} EST</span>
+        <span class="badge text-bg-primary">Last Refreshed:</span>
+        <span class="badge text-bg-secondary" style="margin-left: 5px;" id="last-refreshed-local"></span>
     </div>
+    <script>
+        // Get the UTC datetime string from Django (replace with your field if different)
+        var utcString = "{{ last_refreshed.title }} GMT";
+        var date = new Date(utcString);
+        document.getElementById('last-refreshed-local').textContent = date.toString();
+    </script>
 </div>
 {% endblock %}

@@ -1,6 +1,7 @@
-from django.db.models import Sum, F, FloatField, Count
+from django.db.models import Sum, F, FloatField, Count, Value
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crEpic, crChangeRequest, crFeature, crUserStory,crTask, crLastRefreshed, WBSInformation
+from django.db.models.functions import Lower
+from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crChangeRequest,  crLastRefreshed, WBSInformation, gapLastRefreshed, gapChangeRequest  
 from datetime import datetime, date
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -128,16 +129,75 @@ def cr_dashboard_view(request):
         if wd:
             wbs_effort_map[wd] += float(effort)
 
-
     # Prefetch features and their user stories for optimized queries
-    cr = crChangeRequest.objects.all() \
+    cr_qs = crChangeRequest.objects.all() \
         .prefetch_related(
             'features',
             'features__user_stories',
             'features__user_stories__tasks'
         ) \
         .order_by('clientaccounts')
+    cr = list(cr_qs)  # We'll be working with an in-memory list for easier filtering
 
+    # Build the set of all modules for the dropdown
+    all_modules = set()
+    for change_request in cr:
+        for feature in change_request.features.all():
+            if feature.tt_initiative:
+                all_modules.add(feature.tt_initiative)
+    all_modules = sorted(all_modules)
+
+    # Build the set of all client accounts for the dropdown
+    all_client_accounts = set()
+    for change_request in cr:
+        ca = getattr(change_request, "clientaccounts", None)
+        if ca and ca.strip():
+            # If clientaccounts is a semicolon-separated list, split and trim:
+            for acc in str(ca).split(";"):
+                acc = acc.strip()
+                if acc:
+                    all_client_accounts.add(acc)
+    all_client_accounts = sorted(all_client_accounts)
+
+    # Get selected filters from GET params
+    selected_state = request.GET.get("cr_state", "")
+    selected_modules = request.GET.getlist("module")
+    if "__all__" in selected_modules or not selected_modules:
+        selected_modules = []  # Treat as "no filter"
+    else:
+        cr = [
+            c for c in cr
+            if any(f.tt_initiative in selected_modules for f in c.features.all())
+        ]
+    selected_client_accounts = request.GET.getlist("client_account")
+    if "__all__" in selected_client_accounts or not selected_client_accounts:
+        selected_client_accounts = []  # Treat as "no filter"
+    else:
+        # Apply filter to CR list
+        cr = [
+            c for c in cr
+            if any(acc in selected_client_accounts for acc in str(getattr(c, "clientaccounts", "")).split(";"))
+        ]
+
+    # Apply state filter
+    if selected_state == "HideDone":
+        cr = [c for c in cr if (c.state or "").strip().lower() != "done"]
+    elif selected_state == "InProgress":
+        progress_states = ["committed", "in progress", "blocked"]
+        cr = [c for c in cr if (c.state or "").strip().lower() in progress_states]
+    elif selected_state == "Proposed":
+        proposed_states = ["funnel", "reviewing", "analyzing", "backlog"]
+        cr = [c for c in cr if (c.state or "").strip().lower() in proposed_states]
+    # Else: show all
+
+    # Apply module filter
+    if selected_modules:
+        cr = [
+            c for c in cr
+            if any(f.tt_initiative in selected_modules for f in c.features.all())
+        ]
+
+    # Now rollups and calculations (only for filtered CRs)
     for change_request in cr:
         # 1. Story Point Rollups
         total_planned = 0
@@ -271,6 +331,11 @@ def cr_dashboard_view(request):
     context = {
         'last_refreshed': last_refreshed,
         'cr': cr,
+        'all_modules': all_modules,
+        'selected_modules': selected_modules,
+        'selected_state': selected_state,
+        'all_client_accounts': all_client_accounts,
+        'selected_client_accounts': selected_client_accounts,
     }
     return render(request, 'crdashboard.html', context)
 
@@ -333,3 +398,285 @@ def cr_charts_view(request):
         'status_data': json.dumps(status_data),
     }
     return render(request, 'cr_charts.html', context)
+
+# GAP Dashboard View
+def gap_dashboard_view(request):
+    last_refreshed = gapLastRefreshed.objects.first()
+
+    # Build rollup: workdescription -> total effort
+    wbs_effort_map = defaultdict(float)
+    for wbs in WBSInformation.objects.values('workdescription', 'effort'):
+        wd = wbs['workdescription']
+        effort = wbs['effort'] or 0
+        if wd:
+            wbs_effort_map[wd] += float(effort)
+
+    # Prefetch features and their user stories for optimized queries
+    cr_qs = gapChangeRequest.objects.all() \
+        .prefetch_related(
+            'features',
+            'features__user_stories',
+            'features__user_stories__tasks'
+        ) \
+        .order_by('clientaccounts')
+    cr = list(cr_qs)  # We'll be working with an in-memory list for easier filtering
+
+    # Build the set of all modules for the dropdown
+    all_modules = set()
+    for change_request in cr:
+        for feature in change_request.features.all():
+            if feature.tt_initiative:
+                all_modules.add(feature.tt_initiative)
+    all_modules = sorted(all_modules)
+
+    # Build the set of all client accounts for the dropdown
+    all_client_accounts = set()
+    for change_request in cr:
+        ca = getattr(change_request, "clientaccounts", None)
+        if ca and ca.strip():
+            # If clientaccounts is a semicolon-separated list, split and trim:
+            for acc in str(ca).split(";"):
+                acc = acc.strip()
+                if acc:
+                    all_client_accounts.add(acc)
+    all_client_accounts = sorted(all_client_accounts)
+
+    # Get selected filters from GET params
+    selected_state = request.GET.get("cr_state", "")
+    selected_modules = request.GET.getlist("module")
+    if "__all__" in selected_modules or not selected_modules:
+        selected_modules = []  # Treat as "no filter"
+    else:
+        cr = [
+            c for c in cr
+            if any(f.tt_initiative in selected_modules for f in c.features.all())
+        ]
+    selected_client_accounts = request.GET.getlist("client_account")
+    if "__all__" in selected_client_accounts or not selected_client_accounts:
+        selected_client_accounts = []  # Treat as "no filter"
+    else:
+        # Apply filter to CR list
+        cr = [
+            c for c in cr
+            if any(acc in selected_client_accounts for acc in str(getattr(c, "clientaccounts", "")).split(";"))
+        ]
+
+    # Apply state filter
+    if selected_state == "HideDone":
+        cr = [c for c in cr if (c.state or "").strip().lower() != "done"]
+    elif selected_state == "InProgress":
+        progress_states = ["committed", "in progress", "blocked"]
+        cr = [c for c in cr if (c.state or "").strip().lower() in progress_states]
+    elif selected_state == "Proposed":
+        proposed_states = ["funnel", "reviewing", "analyzing", "backlog"]
+        cr = [c for c in cr if (c.state or "").strip().lower() in proposed_states]
+    # Else: show all
+
+    # Apply module filter
+    if selected_modules:
+        cr = [
+            c for c in cr
+            if any(f.tt_initiative in selected_modules for f in c.features.all())
+        ]
+
+    # Now rollups and calculations (only for filtered CRs)
+    for change_request in cr:
+        # 1. Story Point Rollups
+        total_planned = 0
+        total_done = 0
+        total_active = 0
+        total_new = 0
+
+        # 2. PI Start/End across all features (for CR)
+        cr_pi_start = None
+        cr_pi_end = None
+
+        for feature in change_request.features.all():
+            # 3. PI Start/End for Feature
+            pi_start = None
+            pi_end = None
+
+            for user_story in feature.user_stories.all():
+                # Story Points Rollup
+                try:
+                    storypoints = float(user_story.storypoints)
+                except (ValueError, TypeError):
+                    storypoints = 0
+
+                state = getattr(user_story, "state", "").strip().lower()
+                # Planned (all user stories)
+                total_planned += storypoints * 8
+                # Done/Active/New
+                if state == "done":
+                    total_done += storypoints
+                elif state in ("ready", "in progress", "test", "blocked"):
+                    total_active += storypoints
+                elif state in ("new", "backlog"):
+                    total_new += storypoints
+
+                # PI Start/End per Feature
+                iteration_path = getattr(user_story, "iterationpath", None)
+                if iteration_path:
+                    try:
+                        iteration = Iteration.objects.get(path=iteration_path)
+                        if not pi_start or (iteration.start_date and iteration.start_date < pi_start):
+                            pi_start = iteration.start_date
+                        if not pi_end or (iteration.finish_date and iteration.finish_date > pi_end):
+                            pi_end = iteration.finish_date
+                    except Iteration.DoesNotExist:
+                        pass
+
+            # Attach feature-level PI dates if you want them on the feature:
+            feature.pi_start = pi_start
+            feature.pi_end = pi_end
+
+            # CR-level PI dates: accumulate across all features
+            if pi_start:
+                if not cr_pi_start or pi_start < cr_pi_start:
+                    cr_pi_start = pi_start
+            if pi_end:
+                if not cr_pi_end or pi_end > cr_pi_end:
+                    cr_pi_end = pi_end
+
+        # Attach rollups to the CR
+        change_request.total_planned = total_planned
+        change_request.total_done = total_done
+        change_request.total_active = total_active
+        change_request.total_new = total_new
+        change_request.pi_start = cr_pi_start
+        change_request.pi_end = cr_pi_end
+        change_request.total_sp = total_done + total_active + total_new  # Total story points (in "hours") as sum of all states
+
+        # Progress percentage for progress bar
+        if change_request.total_sp > 0:
+            change_request.percent_done = int(round((change_request.total_done / change_request.total_sp) * 100))
+        else:
+            change_request.percent_done = 0
+
+        # +/- Target Date calculation (CR level)
+        target = getattr(change_request, 'targetdate', None)
+        pi_end = cr_pi_end
+        if target and pi_end:
+            days_diff = (target - pi_end).days
+            if days_diff > 0:
+                change_request.target_vs_pi = f'+{days_diff}'
+            elif days_diff < 0:
+                change_request.target_vs_pi = f'{days_diff}'
+            else:
+                change_request.target_vs_pi = '0'
+        else:
+            change_request.target_vs_pi = ''
+
+        # Attach WBS effort rollup to each CR using tt_workdescription
+        workdesc = getattr(change_request, 'tt_workdescription', None)
+        change_request.wbs_total_effort = wbs_effort_map.get(workdesc, 0)
+
+        # --- TASK ROLLUPS ---
+        total_originalestimate = 0.0
+        total_remainingwork = 0.0
+        total_completedwork = 0.0
+        all_tasks = []
+
+        for feature in change_request.features.all():
+            for user_story in feature.user_stories.all():
+                for task in user_story.tasks.all():
+                    all_tasks.append(task)
+                    # originalestimate
+                    try:
+                        total_originalestimate += float(task.originalestimate or 0)
+                    except (ValueError, TypeError):
+                        pass
+                    # remainingwork
+                    try:
+                        total_remainingwork += float(task.remainingwork or 0)
+                    except (ValueError, TypeError):
+                        pass
+                    # completedwork
+                    try:
+                        total_completedwork += float(task.completedwork or 0)
+                    except (ValueError, TypeError):
+                        pass
+
+        change_request.tasks = all_tasks  # List of all tasks under this CR (for display)
+        change_request.total_task_originalestimate = total_originalestimate
+        change_request.total_task_remainingwork = total_remainingwork
+        change_request.total_task_completedwork = total_completedwork
+
+        # *** Planned vs Estimate Calculation ***
+        highlevelestimate_raw = getattr(change_request, 'highlevelestimate', 0) or 0
+        try:
+            highlevelestimate = float(highlevelestimate_raw)
+        except (ValueError, TypeError):
+            highlevelestimate = 0
+        change_request.planned_vs_estimate = change_request.total_task_originalestimate - highlevelestimate
+
+    context = {
+        'last_refreshed': last_refreshed,
+        'cr': cr,
+        'all_modules': all_modules,
+        'selected_modules': selected_modules,
+        'selected_state': selected_state,
+        'all_client_accounts': all_client_accounts,
+        'selected_client_accounts': selected_client_accounts,
+    }
+    return render(request, 'gapdashboard.html', context)
+
+# GAP Charts View
+def gap_charts_view(request):
+    crs = gapChangeRequest.objects.prefetch_related('features', 'features__user_stories')
+
+    # RELEASE aggregation (already correct)
+    last_release_list = []
+    for cr in crs:
+        all_userstory_releases = []
+        for feature in cr.features.all():
+            for user_story in feature.user_stories.all():
+                userstory_release = getattr(user_story, "iterationpath", None)
+                if userstory_release:
+                    if "\\" in userstory_release:
+                        userstory_release = userstory_release.split("\\", 1)[1]
+                    all_userstory_releases.append(userstory_release)
+        last_release = max(all_userstory_releases) if all_userstory_releases else None
+        last_release_list.append(last_release if last_release else '(blank)')
+    release_counter = Counter(last_release_list)
+    sorted_release_items = sorted(release_counter.items(), key=lambda x: x[0])
+    release_labels = [item[0] for item in sorted_release_items]
+    release_data = [item[1] for item in sorted_release_items]
+
+    # ACCOUNT aggregation (fix here)
+    account_list = []
+    for cr in crs:
+        account = getattr(cr, 'clientaccounts', None)
+        account_list.append(account if account else '(blank)')
+    account_counter = Counter(account_list)
+    sorted_account_items = sorted(account_counter.items(), key=lambda x: (x[0] == '(blank)', x[0]))
+    account_labels = [item[0] for item in sorted_account_items]
+    account_data = [item[1] for item in sorted_account_items]
+
+    # STATUS aggregation (custom order)
+    status_order = [
+        'Funnel', 'Reviewing', 'Analyzing', 'Backlog',
+        'Committed', 'In Progress', 'BLOCKED', 'Done'
+    ]
+    order_map = {name.lower(): i for i, name in enumerate(status_order)}
+    status_list = []
+    for cr in crs:
+        status = getattr(cr, 'state', None)
+        status_list.append(status if status else '(blank)')
+    status_counter = Counter(status_list)
+    sorted_status_items = sorted(
+        status_counter.items(),
+        key=lambda x: order_map.get(str(x[0]).strip().lower(), len(order_map))
+    )
+    status_labels = [item[0] for item in sorted_status_items]
+    status_data = [item[1] for item in sorted_status_items]
+
+    context = {
+        'release_labels': json.dumps(release_labels),
+        'release_data': json.dumps(release_data),
+        'account_labels': json.dumps(account_labels),
+        'account_data': json.dumps(account_data),
+        'status_labels': json.dumps(status_labels),
+        'status_data': json.dumps(status_data),
+    }
+    return render(request, 'gap_charts.html', context)

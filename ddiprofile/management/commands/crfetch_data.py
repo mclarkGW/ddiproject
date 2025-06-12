@@ -13,6 +13,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         start_time = time.time()
+        CUTOFF_DATE = datetime(2025, 1, 15).date()
         organization = 'payerportfolio'
         project_workitems = 'USHC_AMER_US_ADU_HSP_Ua3'
         pat = 'CByqSGDnGCIxr6qgEBSdxWspYW2Yuuvgq5cdqdlliShNDKYtOnE3JQQJ99BCACAAAAA85jZPAAASAZDO474U'
@@ -51,6 +52,15 @@ class Command(BaseCommand):
 
                 with transaction.atomic():
                     for changerequest_data in changerequests:
+                        # Filter: Only include CRs where if State is Done, TargetDate > 1/15/2025
+                        if changerequest_data.get('state') == "Done":
+                            target_date = parse_date(changerequest_data.get('targetdate'))
+                            if not target_date or target_date <= CUTOFF_DATE:
+                                print(
+                                    f"Skipping Change Request ID {changerequest_data.get('id')} because State is 'Done' and TargetDate is not after 1/15/2025"
+                                )
+                                continue
+
                         defaults = {
                             'title': changerequest_data.get('title'),
                             'workitemtype': changerequest_data.get('workitemtype'),
@@ -197,7 +207,7 @@ class Command(BaseCommand):
         crLastRefreshed.objects.update_or_create(
             id=1,
             defaults={
-                'title': now.strftime("%Y-%m-%d %H:%M:%S")
+                'title': now_utc.strftime("%Y-%m-%d %H:%M:%S")
             }
         )
         last_refreshed = crLastRefreshed.objects.get(id=1)
