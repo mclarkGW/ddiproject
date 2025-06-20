@@ -8,6 +8,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CR Dashboard</title>
+    <!-- Bootstrap Select CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+
 <style>
     :root {
         --table-main-bg: #eafaf4;
@@ -148,6 +151,7 @@
     .custom-titlewidth { max-width: 375px; min-width: 240px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-clientwidth { max-width: 170px; min-width: 100px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-relatedwidth { width: 52px; min-width: 45px; text-align: center; }
+    .custom-countwidth { max-width: 50px; min-width: 50px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-contractidwidth {
         max-width: 90px; /* or your desired width */
         width: 90px;
@@ -336,6 +340,12 @@
         border: 2px solid #10898b;
         cursor: pointer;
     }
+    .table th {
+        font-size: 0.7rem;
+    }
+    .table td {
+        font-size: 0.9rem;
+    }
 </style>
 </head>
 <script>
@@ -386,140 +396,191 @@
         updateBtn();
     });
 </script>
-<div class="cr-dash-header">Change Request Dashboard</div>
-        <div class="cr-dash-toolbar">
-            <a href="{% url 'crcharts' %}" style="text-decoration: none;">
-                <button class="cr-dash-btn">
-                    <i class="bi bi-bar-chart-fill" style="font-size: 1.2em; margin-right: 6px;"></i>
-                    View CR Charts
-                </button>
-            </a>
-            <button id="toggle-filter-btn" class="btn btn-warning" title="Hide Filters" aria-label="Hide Filters">
-                <i class="bi bi-funnel"></i> <span class="btn-title">Hide Filter</span>
-            </button>
+    <!-- Heading row -->
+<ul class="nav nav-tabs d-print-none mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'crdashboard' %}">
+            <b>CR Dashboard</b>
+            <span class="badge bg-warning"style="color: black">
+                <i class="bi bi-clipboard-data"></i>
+            </span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'charts' %}active{% endif %}" href="{% url 'crcharts' %}">
+            <span class="badge bg-primary">
+                <i class="bi bi-bar-chart"></i>
+            </span>
+            <span style="color: #007bff; font-weight: 250;">CR Charts</span>
+        </a>
+    </li>
+</ul>
+    <div class="text-center">
+      <h4>Change Request Dashboard</h4>
+    </div>
+    <div class="col-md-2"></div>
+  </div>
+<div class="container my-3">
+  <form method="get" id="crFilterForm">
+    <div class="row g-3 justify-content-center mb4">
+        <!-- Client Account -->
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body h-100">
+                    <div class="text-center">
+                        <label for="clientAccountFilter" class="form-label fw-bold">Client Account</label>
+                    </div>
+                <select
+                    name="client_account"
+                    id="clientAccountFilter"
+                    class="selectpicker w-100"
+                    data-width="100%"
+                    multiple
+                    data-live-search="true"
+                    data-actions-box="true"
+                    data-selected-text-format="count > 2"
+                    title="Choose one or more Client"
+                >
+                    {% for acc in all_client_accounts %}
+                        <option value="{{ acc }}" {% if acc in selected_client_accounts %}selected{% endif %}>{{ acc }}</option>
+                    {% endfor %}
+                </select>
+                    {% if selected_client_accounts %}
+                        <div class="small">
+                            <span class="badge bg-warning" style="color: black;">
+                            <i class="bi bi-filter-circle"></i>
+                            Filter: {{ selected_client_accounts|join:", " }}
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Module -->
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body h-100">
+                <div class="text-center">
+                    <label for="moduleFilter" class="form-label fw-bold">Module</label>
+                </div>
+                <select
+                    name="module"
+                    id="moduleFilter"
+                    class="selectpicker w-100"
+                    data-width="100%"
+                    multiple
+                    data-live-search="true"
+                    data-actions-box="true"
+                    data-selected-text-format="count > 2"
+                    title="Choose one or more Module"
+                >
+                    {% for mod in all_modules %}
+                    <option value="{{ mod }}" {% if mod in selected_modules %}selected{% endif %}>{{ mod }}</option>
+                    {% endfor %}
+                </select>
+                    {% if selected_modules %}
+                        <div class="small">
+                            <span class="badge bg-warning" style="color: black;">
+                            <i class="bi bi-filter-circle"></i>
+                            Filter: {{ selected_modules|join:", " }}
+                            </span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
-<div id="filter-container">
-    <div class="cr-dash-filter-area-two-col">
-        <form method="get" id="crFilterForm" class="cr-dash-filter-form">
-            <div class="cr-dash-filter-cols">
-                <!-- Client Account column FIRST -->
-                <div class="cr-dash-filter-col">
-                    <div class="cr-dash-filter-label-row">
-                        <span class="cr-dash-filter-label">Client Account:</span>
-                        <select name="client_account" id="clientAccountFilter" class="cr-dash-filter-dropdown" multiple style="min-width: 150px;" multiple size="7">
-                            <option value="__all__" {% if not selected_client_accounts or "__all__" in selected_client_accounts %}selected{% endif %}>Show All</option>
-                            {% for acc in all_client_accounts %}
-                                <option value="{{ acc }}" {% if acc in selected_client_accounts %}selected{% endif %}>{{ acc }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="cr-dash-filter-badge-row">
-                        {% if selected_client_accounts and not "__all__" in selected_client_accounts %}
-                        <span class="badge bg-warning text-dark mt-1" style="font-size:0.96em;">
-                            <i class="bi bi-filter-circle" style="margin-right: 4px;"></i>
-                            Filter: {{ selected_client_accounts|join:", " }}
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <!-- Module column SECOND -->
-                <div class="cr-dash-filter-col">
-                    <div class="cr-dash-filter-label-row">
-                        <span class="cr-dash-filter-label">Module:</span>
-                        <select name="module" id="moduleFilter" class="cr-dash-filter-dropdown" multiple style="min-width: 150px;" size="7">
-                            <option value="__all__" {% if not selected_modules or "__all__" in selected_modules %}selected{% endif %}>Show All</option>
-                            {% for mod in all_modules %}
-                                <option value="{{ mod }}" {% if mod in selected_modules %}selected{% endif %}>{{ mod }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="cr-dash-filter-badge-row">
-                        {% if selected_modules and not "__all__" in selected_modules %}
-                        <span class="badge bg-warning text-dark mt-1" style="font-size:0.96em;">
-                            <i class="bi bi-filter-circle" style="margin-right: 4px;"></i>
-                            Filter: {{ selected_modules|join:", " }}
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <!-- State column THIRD -->
-                <div class="cr-dash-filter-col">
-                    <div class="cr-dash-filter-label-row">
-                        <span class="cr-dash-filter-label">State:</span>
-                        <select name="cr_state" id="mainCrStateFilter" class="cr-dash-filter-dropdown">
-                            <option value="">Show All</option>
-                            <option value="HideDone" {% if selected_state == "HideDone" %}selected{% endif %}>Hide Done</option>
-                            <option value="InProgress" {% if selected_state == "InProgress" %}selected{% endif %}>In Progress</option>
-                            <option value="Proposed" {% if selected_state == "Proposed" %}selected{% endif %}>Proposed</option>
-                        </select>
-                    </div>
-                    <div class="cr-dash-filter-badge-row">
-                        {% if selected_state and selected_state != "" %}
-                        <span class="badge bg-warning text-dark mt-1" style="font-size:0.96em;">
-                            <i class="bi bi-filter-circle" style="margin-right: 4px;"></i>
-                            Filter: 
-                            {% if selected_state == "HideDone" %}
-                                Hide Done
-                            {% elif selected_state == "InProgress" %}
-                                In Progress
-                            {% elif selected_state == "Proposed" %}
-                                Proposed
-                            {% else %}
-                                {{ selected_state }}
-                            {% endif %}
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
+      <!-- State -->
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body h-100">
+            <div class="text-center">
+                <label for="mainCrStateFilter" class="form-label fw-bold">State</label>
             </div>
-            <div class="cr-dash-filter-buttons">
-                <button type="submit" class="badge bg-primary">
-                    <i class="bi bi-check-lg"></i> Apply Filter(s)
-                </button>
-                <button type="button" class="badge bg-danger"
-                    onclick="window.location.href='{{ request.path }}';">
-                    <i class="bi bi-x-lg"></i> Clear Filter(s)
-                </button>
+            <select
+                name="cr_state"
+                id="mainCrStateFilter"
+                class="form-select w-100"
+                title="Choose a state"
+            >
+                <option value="">Show All</option>
+                <option value="HideDone" {% if selected_state == "HideDone" %}selected{% endif %}>Hide Done</option>
+                <option value="InProgress" {% if selected_state == "InProgress" %}selected{% endif %}>In Progress</option>
+                <option value="Proposed" {% if selected_state == "Proposed" %}selected{% endif %}>Proposed</option>
+            </select>
+            {% if selected_state and selected_state != "" %}
+            <div class="small">
+                <span class="badge bg-warning" style="color: black;">
+                <i class="bi bi-filter-circle"></i>
+                Filter:
+                {% if selected_state == "HideDone" %}Hide Done
+                {% elif selected_state == "InProgress" %}In Progress
+                {% elif selected_state == "Proposed" %}Proposed
+                {% else %}{{ selected_state }}{% endif %}
+                
             </div>
-        </form>
+            {% endif %}
+            </span>    
+            </div>
+        </div>
     </div>
+    <!--Filter Buttons-->
+    <div class="col-md-3 d-flex align-items-stretch">
+        <div class="card shadow-sm h-100">
+        <div class="card-body h-100 d-flex flex-column justify-content-center align-items-center">
+            <button type="submit" class="btn btn-primary mb-2 w-100">
+            <i class="bi bi-check-lg"></i> Apply Filter(s)
+            </button>
+            <a href="{{ request.path }}" class="btn btn-outline-danger w-100">
+            <i class="bi bi-x-lg"></i> Clear Filter(s)
+            </a>
+        </div>
+        </div>
+    </div>
+  </form>
 </div>
-        
-    <table class="table-main">
-        <thead>
-            <tr>
-                <th colspan="20"><b>Change Request</b></th>
-            <tr>
-                <th class="col-end"; colspan="6"></th>
-                <th class="col-end"; colspan="5"><b>Schedule</b></th>
-                <th class="col-end"; colspan="5"><b>Effort</b></th>
-                <th class="col-end"; colspan="3"><b>Story Points</b></th>
-                <th class="col-end"; colspan="1"><b>User Story</b></th>
-            </tr>
-            <tr>
-                <th class="custom-relatedwidth">+/-</th>
-                <th class="custom-relatedwidth"># Features</th>
-                <th class="custom-contractidwidth">Contract ID</th>
-                <th>ID</th>
-                <th class="custom-titlewidth">Title</th>
-                <th class="col-end">State</th>
-                <th class="custom-clientwidth">Client Accounts</th>
-                <th>Target Date</th>
-                <th>PI Start</th>
-                <th>PI End</th>
-                <th class="col-end">+/- Days</th>
-                <th>Estimated</th>
-                <th>Planned</th>
-                <th>Actual</th>
-                <th>+/- Hours</th>
-                <th class="col-end">WBS Hours</th>
-                <th>Done</th>
-                <th>Active</th>
-                <th class="col-end">New</th>
-                <th>Done</th>
-            </tr>
-        </thead>
+<script>
+  // Needed to initialize Bootstrap Select if you use dynamic forms
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.jQuery && $('.selectpicker').length) {
+      $('.selectpicker').selectpicker();
+    }
+  });
+</script>
+</div>
+<div id="container" style="width:100%;" align="center">
+    <table style="text-align:center" class="table table-bordered table-striped table-hover table-sm">
+        <tr style="font-weight: bold;">
+            <th scope="col" class="bg-dark text-white"; colspan="20">Change Requests</th>
+        <tr style="font-weight: bold;" class="text-center">
+            <th scope="col" class="bg-info text-white">+/-</th>
+            <th title="# Features"scope="col" class="bg-info text-white custom-countwidth"># Features</th>
+            <th scope="col" class="bg-info text-white">Contract ID</th>
+            <th scope="col" class="bg-info text-white">ID</th>
+            <th scope="col" class="bg-info text-white">Title</th>
+            <th scope="col" class="bg-info text-white">State</th>
+            <th scope="col" class="bg-success text-white"; colspan="5"><b>Schedule</b></th>
+            <th scope="col" class="bg-danger text-white"; colspan="5"><b>Effort</b></th>
+            <th scope="col" class="bg-secondary text-white"; colspan="3"><b>Story Points</b></th>
+            <th scope="col" class="bg-secondary text-white"; colspan="1"><b>User Story</b></th>
+        </tr>
+        <tr>
+            <th class="table-info"; colspan ="6"></th>
+            <th class="table-success custom-clientwidth text-dark">Client Accounts</th>
+            <th class="table-success text-dark">Target Date</th>
+            <th class="table-success text-dark">Start</th>
+            <th class="table-success text-dark">End</th>
+            <th class="table-success text-dark">+/- Days</th>
+            <th class="table-danger text-dark">Estimated</th>
+            <th class="table-danger text-dark">Planned</th>
+            <th class="table-danger text-dark">Actual</th>
+            <th class="table-danger text-dark">+/- Hours</th>
+            <th class="table-danger text-dark">WBS Hours</th>
+            <th class="table-secondary text-dark">Done</th>
+            <th class="table-secondary text-dark">Active</th>
+            <th class="table-secondary text-dark">New</th>
+            <th class="table-secondary text-dark">Done</th>
+        </tr>
         <tbody>
             {% for cr in cr %}
             <tr>
@@ -527,16 +588,16 @@
                 <td class="expand-btn" id="expand-btn-cr-{{ cr.id }}" onclick="toggleRow('features-{{ cr.id }}', 'expand-btn-cr-{{ cr.id }}')">
                     {% if cr.features.all %}+{% else %}&nbsp;{% endif %}
                 </td>
-                <td title="{{ cr.features.count }}"class="custom-relatedwidth">{% if cr.features.all %}<span class="badge text-bg-light">{{ cr.features.count }}</span>{% endif %}</td>
+                <td title="{{ cr.features.count }} - Associated Feature"class="custom-featurewidth">{% if cr.features.all %}<span class="badge text-bg-light">{{ cr.features.count }}</span>{% endif %}</td>
                 <td title="{{ cr.tt_workdescription }}">
                     <span class="custom-contractidwidth badge text-bg-light">{{ cr.tt_workdescription }}</span>
                 </td>
-                <td class="text-left">
+                <td class="text-center">
                     <span class="badge text-bg-light">
                         <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ cr.id }}" class="link-primary" target="_blank">{{ cr.id }}</a>
                     </span>
                 </td>
-                <td title="{{ cr.title }}">
+                <td title="{{ cr.title }}" class="text-left">
                     <span class="custom-titlewidth badge text-bg-light">{{ cr.title }}</span>
                 </td>
                 <td class="text-center">
@@ -561,24 +622,33 @@
                     {% endfor %}
                 </td>
                 <td title="Target Date - {{ cr.targetdate }}" class="text-center"><span class="badge text-bg-light">{{ cr.targetdate|date:"m/d/y"|default:"" }}</span></td>
-                <td class="text-center"><span class="badge text-bg-light">{{ cr.pi_start|date:"m/d/y"|default:"" }}</span></td>
-                <td class="text-center"><span class="badge text-bg-light">{{ cr.pi_end|date:"m/d/y"|default:"" }}</span></td>
+                <td title="First Iteration Start" class="text-center"><span class="badge text-bg-light">{{ cr.pi_start|date:"m/d/y"|default:"" }}</span></td>
+                <td title="Last Iteration Finish" class="text-center"><span class="badge text-bg-light">{{ cr.pi_end|date:"m/d/y"|default:"" }}</span></td>
                 <td class="text-center">
-                <span class="badge 
-                    {% if cr.target_vs_pi %}
-                    {% if cr.target_vs_pi|slice:":1" == "+" %}
-                        text-bg-danger
-                    {% elif cr.target_vs_pi|slice:":1" == "-" %}
-                        text-bg-success
-                    {% else %}
+                    <span class="badge 
+                        {% if cr.target_vs_pi %}
+                        {% if cr.target_vs_pi|slice:":1" == "+" %}
+                            text-bg-danger
+                        {% elif cr.target_vs_pi|slice:":1" == "-" %}
+                            text-bg-success
+                        {% else %}
+                            text-bg-light
+                        {% endif %}
+                        {% else %}
                         text-bg-light
-                    {% endif %}
-                    {% else %}
-                    text-bg-light
-                    {% endif %}
-                ">
-                    {{ cr.target_vs_pi }}
-                </span>
+                        {% endif %}"
+                            title="{% if cr.target_vs_pi %}
+                            {% if cr.target_vs_pi|slice:":1" == "+" %}
+                                {{ cr.target_vs_pi }} Days ahead of Target
+                            {% elif cr.target_vs_pi|slice:":1" == "-" %}
+                                {{ cr.target_vs_pi|slice:"1:" }} Days past Target
+                            {% else %}
+                                On Target
+                            {% endif %}
+                        {% endif %}"
+                    >
+                        {{ cr.target_vs_pi }}
+                    </span>
                 </td>
                 <td class="text-center", title="High Level Estimate on CR in ADO"><span class="badge text-bg-light">{{ cr.highlevelestimate|default:""|floatformat:0 }}</span></td>
                 <td class="text-center", title="Sum of Original Estimate on Task in ADO"><span class="badge text-bg-light">{{ cr.total_task_originalestimate|default:""|floatformat:0 }}</span></td>
@@ -619,25 +689,22 @@
             </tr>
             {% if cr.features.all %}
             <tr id="features-{{ cr.id }}" class="hidden">
-                <td colspan="16" style="background: var(--table-feature-bg); padding: 0.5rem;">
-                    <table class="table-feature">
-                        <thead>
-                            <tr>
-                                <th colspan="10"><b>Associated Features</b></th>
-                            <tr>
-                            <tr>
-                                <th class="custom-relatedwidth">+/-</th>
-                                <th class="custom-relatedwidth"># User Stories</th>
-                                <th>Contract ID#</th>
-                                <th>ID</th>
-                                <th class="custom-titlewidth">Title</th>
-                                <th>State</th>
-                                <th>Module</th>
-                                <th>Start Date</th>
-                                <th>Target Date</th>
-                                <th>Iteration Path</th>
-                            </tr>
-                        </thead>
+                <td colspan="18" style="padding: 0.5rem;">
+                    <table style="text-align:center" class="table table-bordered table-striped table-hover table-sm">
+                        <tr style="font-weight: bold;">
+                            <th scope="col" class="table-dark text-white"; colspan="18">Associated Features</th>
+                        <tr style="font-weight: bold;" class="text-center">
+                            <th scope="col" class="table-info text-dark">+/-</th>
+                            <th scope="col" class="table-info text-dark custom-countwidth"># User Stories</th>
+                            <th scope="col" class="table-info text-dark">Contract ID</th>
+                            <th scope="col" class="table-info text-dark">ID</th>
+                            <th scope="col" class="table-info text-dark">Title</th>
+                            <th scope="col" class="table-info text-dark">State</th>
+                            <th scope="col" class="table-success text-dark">Module</th>
+                            <th scope="col" class="table-danger text-dark">Start Date</th>
+                            <th scope="col" class="table-danger text-dark">Target Date</th>
+                            <th scope="col" class="table-secondary text-dark">Iteration Path</th>
+                        </tr>
                         <tbody>
                             {% for feature in cr.features.all %}
                             <tr>
@@ -651,7 +718,7 @@
                                         <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ feature.id }}" class="link-primary" target="_blank">{{ feature.id }}</a>
                                     </span>
                                 </td>
-                                <td title="{{ feature.title }}">
+                                <td title="{{ feature.title }}" class="text-left">
                                     <span class="custom-titlewidth badge text-bg-light">{{ feature.title }}</span>
                                 </td>
                                 <td class="text-center">
@@ -675,111 +742,105 @@
                             </tr>
                             {% if feature.user_stories.all %}
                             <tr id="userstories-{{ cr.id }}-{{ feature.id }}" class="hidden">
-                                <td colspan="16" style="background: var(--table-userstory-bg); padding: 0.25rem;">
-                                    <table class="table-userstory">
-                                        <thead>
-                                            <tr>
-                                                <th colspan="10"><b>Children User Stories</b></th>
-                                            <tr>
-                                            <tr>
-                                                <th class="custom-relatedwidth">+/-</th>
-                                                <th class="custom-relatedwidth"># Tasks</th>
-                                                <th>ID</th>
-                                                <th class="custom-titlewidth">User Story Title</th>
-                                                <th>State</th>
-                                                <th>Story Points</th>
-                                                <th>Iteration Path</th>
-                                            </tr>
-                                        </thead>
+                                <td colspan="9" style="padding: 0.25rem;">
+                                    <table style="text-align:center" class="table table-bordered table-striped table-hover table-sm">
+                                        <tr style="font-weight: bold;">
+                                            <th scope="col" class="table-dark text-white"; colspan="9">Children User Stories</th>
+                                        <tr style="font-weight: bold;" class="text-center">
+                                            <th scope="col" class="table-info text-dark">+/-</th>
+                                            <th scope="col" class="table-info text-dark custom-countwidth"># Tasks</th>
+                                            <th scope="col" class="table-info text-dark">ID</th>
+                                            <th scope="col" class="table-info text-dark">User Story Title</th>
+                                            <th scope="col" class="table-info text-dark">State</th>
+                                            <th scope="col" class="table-danger text-dark">Story Points</th>
+                                            <th scope="col" class="table-secondary text-dark">Iteration Path</th>
+                                        </tr>
                                         <tbody>
                                             {% for user_story in feature.user_stories.all %}
-                                    <tr>
-                                        <td class="text-center">
-                                            {% if user_story.tasks.all %}
-                                            <span class="expand-btn" id="expand-btn-userstory-{{ feature.id }}-{{ user_story.id }}" onclick="toggleRow('tasks-{{ feature.id }}-{{ user_story.id }}', 'expand-btn-userstory-{{ feature.id }}-{{ user_story.id }}')">+</span>
-                                            {% else %}
-                                            &nbsp;
-                                            {% endif %}
-                                        </td>
-                                        <td class="custom-relatedwidth">{% if user_story.tasks.all %}<span class="badge text-bg-light">{{ user_story.tasks.count }}</span>{% endif %}</td>
-                                        <td class="text-left">
-                                            <span class="badge text-bg-light">
-                                                <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary" target="_blank">{{ user_story.id }}</a>
-                                            </span>
-                                        </td>
-                                        <td title="{{ user_story.title }}">
-                                            <span class="custom-titlewidth badge text-bg-light">{{ user_story.title }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <span class="badge
-                                                {% if user_story.state == 'New' %}text-bg-secondary
-                                                {% elif user_story.state == 'Backlog' %}text-bg-info
-                                                {% elif user_story.state == 'Ready' %}text-bg-info
-                                                {% elif user_story.state == 'In Progress' %}text-bg-warning
-                                                {% elif user_story.state == 'Test' %}text-bg-info
-                                                {% elif user_story.state == 'BLOCKED' %}text-bg-danger
-                                                {% elif user_story.state == 'Done' %}text-bg-primary
-                                                {% else %}text-bg-dark
+                                        <tr>
+                                            <td class="text-center">
+                                                {% if user_story.tasks.all %}
+                                                <span class="expand-btn" id="expand-btn-userstory-{{ feature.id }}-{{ user_story.id }}" onclick="toggleRow('tasks-{{ feature.id }}-{{ user_story.id }}', 'expand-btn-userstory-{{ feature.id }}-{{ user_story.id }}')">+</span>
+                                                {% else %}
+                                                &nbsp;
                                                 {% endif %}
-                                            ">{{ user_story.state }}</span>
-                                        </td>
-                                        <td class="text-center"><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0 }}</span></td>
-                                        <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
-                                    </tr>
-                                    {% if user_story.tasks.all %}
-                                    <tr id="tasks-{{ feature.id }}-{{ user_story.id }}" class="hidden">
-                                        <td colspan="7" style="background: var(--table-task-bg); padding: 0.25rem;">
-                                            <table class="table-task">
-                                                <thead>
-                                                    <tr>
-                                                        <th colspan="7"><b>Children Tasks</b></th>
-                                                    <tr>
-                                                    <tr>
-                                                        <th>Task ID</th>
-                                                        <th class="custom-titlewidth">Task Title</th>
-                                                        <th>State</th>
-                                                        <th>Original Est</th>
-                                                        <th>Completed</th>
+                                            </td>
+                                            <td class="custom-relatedwidth">{% if user_story.tasks.all %}<span class="badge text-bg-light">{{ user_story.tasks.count }}</span>{% endif %}</td>
+                                            <td class="text-left">
+                                                <span class="badge text-bg-light">
+                                                    <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ user_story.id }}" class="link-primary" target="_blank">{{ user_story.id }}</a>
+                                                </span>
+                                            </td>
+                                            <td title="{{ user_story.title }}" class="text-left">
+                                                <span class="custom-titlewidth badge text-bg-light">{{ user_story.title }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge
+                                                    {% if user_story.state == 'New' %}text-bg-secondary
+                                                    {% elif user_story.state == 'Backlog' %}text-bg-info
+                                                    {% elif user_story.state == 'Ready' %}text-bg-info
+                                                    {% elif user_story.state == 'In Progress' %}text-bg-warning
+                                                    {% elif user_story.state == 'Test' %}text-bg-info
+                                                    {% elif user_story.state == 'BLOCKED' %}text-bg-danger
+                                                    {% elif user_story.state == 'Done' %}text-bg-primary
+                                                    {% else %}text-bg-dark
+                                                    {% endif %}
+                                                ">{{ user_story.state }}</span>
+                                            </td>
+                                            <td class="text-center"><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0 }}</span></td>
+                                            <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
+                                        </tr>
+                                        {% if user_story.tasks.all %}
+                                        <tr id="tasks-{{ feature.id }}-{{ user_story.id }}" class="hidden">
+                                            <td colspan="6" style="padding: 0.25rem;">
+                                                <table style="text-align:center" class="table table-bordered table-striped table-hover table-sm">
+                                                    <tr style="font-weight: bold;">
+                                                        <th scope="col" class="table-dark text-white"; colspan="6">Children Tasks</th>
+                                                    <tr style="font-weight: bold;" class="text-center">
+                                                        <th scope="col" class="table-info text-dark">ID</th>
+                                                        <th scope="col" class="table-info text-dark">Task Title</th>
+                                                        <th scope="col" class="table-info text-dark">State</th>
+                                                        <th scope="col" class="table-danger text-dark">Original Est</th>
+                                                        <th scope="col" class="table-danger text-dark">Completed</th> 
                                                     </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for task in user_story.tasks.all %}
-                                                    <tr>
-                                                        <td class="text-left">
-                                                            <span class="badge text-bg-light">
-                                                                <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ task.id }}" class="link-primary" target="_blank">{{ task.id }}</a>
-                                                            </span>
-                                                        </td>
-                                                        <td title="{{ task.title }}">
-                                                            <span class="custom-titlewidth badge text-bg-light">{{ task.title }}</span>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <span class="badge
-                                                                {% if task.state == 'New' %}text-bg-secondary
-                                                                {% elif task.state == 'Backlog' %}text-bg-info
-                                                                {% elif task.state == 'Ready' %}text-bg-info
-                                                                {% elif task.state == 'In Progress' %}text-bg-warning
-                                                                {% elif task.state == 'Test' %}text-bg-info
-                                                                {% elif task.state == 'BLOCKED' %}text-bg-danger
-                                                                {% elif task.state == 'Done' %}text-bg-primary
-                                                                {% else %}text-bg-dark
-                                                                {% endif %}
-                                                            ">{{ task.state }}</span>
-                                                        </td>
-                                                        <td class="text-center"><span class="badge text-bg-light">{{ task.originalestimate|default:""|floatformat:0 }}</span></td>
-                                                        <td class="text-center"><span class="badge text-bg-light">{{ task.completedwork|default:""|floatformat:0 }}</span></td>
-                                                    </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                    {% endif %}
-                                    {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </td>
-                            </tr>
+                                                    <tbody>
+                                                        {% for task in user_story.tasks.all %}
+                                                        <tr>
+                                                            <td class="text-center">
+                                                                <span class="badge text-bg-light">
+                                                                    <a href="https://dev.azure.com/PayerPortfolio/USHC_AMER_US_ADU_HSP_Ua3/_workitems/edit/{{ task.id }}" class="link-primary" target="_blank">{{ task.id }}</a>
+                                                                </span>
+                                                            </td>
+                                                            <td title="{{ task.title }}" class="text-left">
+                                                                <span class="custom-titlewidth badge text-bg-light">{{ task.title }}</span>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <span class="badge
+                                                                    {% if task.state == 'New' %}text-bg-secondary
+                                                                    {% elif task.state == 'Backlog' %}text-bg-info
+                                                                    {% elif task.state == 'Ready' %}text-bg-info
+                                                                    {% elif task.state == 'In Progress' %}text-bg-warning
+                                                                    {% elif task.state == 'Test' %}text-bg-info
+                                                                    {% elif task.state == 'BLOCKED' %}text-bg-danger
+                                                                    {% elif task.state == 'Done' %}text-bg-primary
+                                                                    {% else %}text-bg-dark
+                                                                    {% endif %}
+                                                                ">{{ task.state }}</span>
+                                                            </td>
+                                                            <td class="text-center"><span class="badge text-bg-light">{{ task.originalestimate|default:""|floatformat:0 }}</span></td>
+                                                            <td class="text-center"><span class="badge text-bg-light">{{ task.completedwork|default:""|floatformat:0 }}</span></td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
                             {% endif %}
                             {% endfor %}
                         </tbody>
@@ -801,5 +862,9 @@
             document.getElementById('last-refreshed-local').textContent = date.toString();
         </script>
     </div>
+    <!-- Bootstrap JS (if not already included) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
 </div>
 {% endblock %}

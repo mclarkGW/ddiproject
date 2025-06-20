@@ -9,7 +9,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         addMthYear = 'JUN2025'
         delMthYear = 'JUN2025'
-        sheetname = 'wk1_data'
+        sheetname = 'wk2_data'
 
         deleted_count, _ = WBSInformation.objects.filter(monthyear=delMthYear).delete()
         print(f"Deleted {deleted_count} existing rows with monthyear = {delMthYear}")

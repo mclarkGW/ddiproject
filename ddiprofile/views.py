@@ -336,6 +336,7 @@ def cr_dashboard_view(request):
         'selected_state': selected_state,
         'all_client_accounts': all_client_accounts,
         'selected_client_accounts': selected_client_accounts,
+        'active_tab': 'dashboard',
     }
     return render(request, 'crdashboard.html', context)
 
@@ -396,6 +397,7 @@ def cr_charts_view(request):
         'account_data': json.dumps(account_data),
         'status_labels': json.dumps(status_labels),
         'status_data': json.dumps(status_data),
+        'active_tab': 'charts',
     }
     return render(request, 'cr_charts.html', context)
 
@@ -618,6 +620,7 @@ def gap_dashboard_view(request):
         'selected_state': selected_state,
         'all_client_accounts': all_client_accounts,
         'selected_client_accounts': selected_client_accounts,
+        'active_tab': 'dashboard',
     }
     return render(request, 'gapdashboard.html', context)
 
@@ -678,5 +681,6 @@ def gap_charts_view(request):
         'account_data': json.dumps(account_data),
         'status_labels': json.dumps(status_labels),
         'status_data': json.dumps(status_data),
+        'active_tab': 'charts',
     }
     return render(request, 'gap_charts.html', context)

@@ -69,26 +69,41 @@
     }
 </style>
 </head>
-<div class="cr-dash-header">Change Request Charts</div>
-<div class="cr-dash-toolbar">
-    <a href="{% url 'crdashboard' %}" style="text-decoration: none;">
-        <button class="cr-dash-btn">
-            <i class="bi bi-bar-chart-steps" style="font-size: 1.2em; margin-right: 6px;"></i>
-            View CR Dashboard
-        </button>
-    </a>
+    <!-- CR Charts button and heading row -->
+<ul class="nav nav-tabs d-print-none mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'crdashboard' %}">
+            <b>CR Dashboard</b>
+            <span class="badge bg-warning"style="color: black">
+                <i class="bi bi-clipboard-data"></i>
+            </span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'charts' %}active{% endif %}" href="{% url 'crcharts' %}">
+            <span class="badge bg-primary">
+                <i class="bi bi-bar-chart"></i>
+            </span>
+            <span style="color: #007bff; font-weight: 250;">CR Charts</span>
+        </a>
+    </li>
+</ul>
+<div class="text-center">
+    <h4>Change Request Charts</h4>
 </div>
+<br>
+<br>
 <div style="display: flex; gap: 30px;">
     <div style="flex: 1;">
-        <div class="cr-dash-chart-title">CRs by Release</div>
+        <span class="badge bg-primary fs-5 fw-bold mb-2" style="width:100%;display:inline-block;">CRs by Release</span>
         <canvas id="crsByReleaseChart" width="500" height="300"></canvas>
     </div>
     <div style="flex: 1;">
-        <div class="cr-dash-chart-title">CRs by Account</div>
+        <span class="badge bg-success fs-5 fw-bold mb-2" style="width:100%;display:inline-block;">CRs by Account</span>
         <canvas id="crsByAccountChart" width="500" height="300"></canvas>
     </div>
     <div style="flex: 1;">
-        <div class="cr-dash-chart-title">CRs by Status</div>
+        <span class="badge bg-danger fs-5 fw-bold mb-2" style="width:100%;display:inline-block;">CRs by Status</span>
         <canvas id="crsByStatusChart" width="500" height="300"></canvas>
     </div>
 </div>
@@ -115,24 +130,29 @@ function makeBarChart(canvasId, labels, data, color) {
         }
     });
 }
-
+//bg-info: #17a2b8 (or in v5, #0dcaf0)
+//bg-danger: #dc3545
+//bg-secondary:#6c757d
+//bg-success: #198754
+//bg-warning: #ffc107
+//bg-primary: #0d6efd-->
 makeBarChart(
     'crsByReleaseChart',
     {{ release_labels|safe }},
     {{ release_data|safe }},
-    'rgba(130, 204, 77, 0.7)'
+    '#ffc107'
 );
 makeBarChart(
     'crsByAccountChart',
     {{ account_labels|safe }},
     {{ account_data|safe }},
-    'rgba(77, 172, 204, 0.7)'
+    '#6c757d'
 );
 makeBarChart(
     'crsByStatusChart',
     {{ status_labels|safe }},
     {{ status_data|safe }},
-    'rgba(130, 204, 77, 0.7)'
+    '#ffc107'
 );
 </script>
 {% endblock %}
