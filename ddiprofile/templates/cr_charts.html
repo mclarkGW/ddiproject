@@ -6,70 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CR Charts</title>
-<style>
-    .cr-dash-header {
-        text-align: center;
-        font-size: 3rem;
-        font-weight: 800;
-        color: #29343b;
-        margin-top: 2.5rem;
-        margin-bottom: 1.2rem;
-        letter-spacing: 1.5px;
-        border-bottom: 4px solid #1dc7b2;
-        display: inline-block;
-        padding-bottom: 0.4rem;
-        box-shadow: 0 6px 12px -10px #1dc7b2;
-    }
-    .cr-dash-chart-title {
-        text-align: center;
-        font-size: 1.15rem;
-        font-weight: 600;
-        color: #10898b;
-        margin-bottom: 0.7rem;
-        margin-top: 0;
-        letter-spacing: 0.5px;
-        border-bottom: 2.5px solid #b7e4c7;
-        display: inline-block;
-        padding-bottom: 0.2rem;
-        box-shadow: 0 2px 6px -5px #b7e4c7;
-        width: 100%;
-        background: #eafaf4;
-        border-radius: 6px 6px 0 0;
-    }
-    .cr-dash-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-        margin-left: 0.5rem;
-    }
-    .cr-dash-btn {
-        padding: 10px 22px;
-        font-size: 1.1em;
-        background: #17a2b8;
-        color: white;
-        border: none;
-        border-radius: 7px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 8px 0 rgba(23,162,184,0.11);
-        transition: background 0.15s;
-        text-decoration: none;
-    }
-    .cr-dash-btn:hover {
-        background: #138496;
-        color: #fff;
-    }
-    .cr-dash-filter-dropdown:focus {
-        border-color: #138496;
-        outline: none;
-    }
-</style>
 </head>
-    <!-- CR Charts button and heading row -->
 <ul class="nav nav-tabs d-print-none mb-3">
     <li class="nav-item">
         <a class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'crdashboard' %}">
@@ -85,6 +22,14 @@
                 <i class="bi bi-bar-chart"></i>
             </span>
             <span style="color: #007bff; font-weight: 250;">CR Charts</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'cr_export_excel' %}" title="Export All Items to Excel">
+            <span class="badge bg-success" style="color: white">
+                <i class="bi bi-file-earmark-excel"></i>
+            </span>
+            <span style="color: black; font-weight: 250;">Export to Excel</span>
         </a>
     </li>
 </ul>

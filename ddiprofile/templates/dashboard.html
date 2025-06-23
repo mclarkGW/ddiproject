@@ -10,139 +10,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DDI Dashboard</title>
 <style>
-    :root {
-        --table-main-bg: #eafaf4;
-        --table-main-border: #17a2b8;
-        --table-main-header: #d1f1e7;
-        --table-cr-bg: #f5f6fa;
-        --table-cr-border: #a6b2cc;
-        --table-cr-header: #e7eaf6;
-        --table-feature-bg: #fff8e6;
-        --table-feature-border: #e3b04b;
-        --table-feature-header: #fff3d6;
-        --table-userstory-bg: #faeae9;
-        --table-userstory-border: #d47c7c;
-        --table-userstory-header: #f5dcdc;
-        --modern-shadow: 0 2px 12px 0 rgba(0,0,0,0.08);
-    }
-    .dash-title {
-        text-align: center;
-        font-size: 2.7rem;
-        font-weight: 600;
-        margin: 1.2rem 0 1.7rem 0;
-        color: #2B3A44; /* Optional: your yellow brand color, adjust as needed */
-        letter-spacing: 1px;
-    }
-    /* Universal tight header style for all table levels, with column borders and no badge effects */
-    .table-main th,
-    .table-cr th,
-    .table-feature th,
-    .table-userstory th {
-        font-size: 0.68em;
-        height: 20px;
-        line-height: 1.1;
-        padding: 2.5px 3px;
-        text-align: center;
-        vertical-align: middle;
-        font-weight: 600;
-        letter-spacing: 0.01em;
-        white-space: nowrap;
-        border-radius: 0 !important;
-        background-image: none !important;
-        box-shadow: none !important;
-        border: 1px solid #b7e4c7;
-    }
-    /* Add column borders to all table levels */
-    .table-main th, .table-main td,
-    .table-cr th, .table-cr td,
-    .table-feature th, .table-feature td,
-    .table-userstory th, .table-userstory td {
-        border: 1px solid #b7e4c7;
-    }
-    .table-cr th, .table-cr td {
-        border-color: var(--table-cr-border);
-    }
-    .table-feature th, .table-feature td {
-        border-color: var(--table-feature-border);
-    }
-    .table-userstory th, .table-userstory td {
-        border-color: var(--table-userstory-border);
-    }
-    /* Main Initiative Table */
-    .table-main {
-        background: var(--table-main-bg);
-        border: 1.5px solid var(--table-main-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
-    .table-main th {
-        background: var(--table-main-header);
-        color: #10898b;
-        border-bottom: 2px solid var(--table-main-border);
-    }
-    .table-main thead tr:first-child th {
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
-    }
-    .table-main td {
-        background: #fff;
-        border-color: var(--table-main-border);
-    }
-    /* CR Table */
-    .table-cr {
-        background: var(--table-cr-bg);
-        border: 1.5px solid var(--table-cr-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 9px;
-        margin-bottom: 1.2rem;
-    }
-    .table-cr th {
-        background: var(--table-cr-header);
-        color: #4169a6;
-        border-bottom: 2px solid var(--table-cr-border);
-    }
-    .table-cr td {
-        background: #fff;
-        border-color: var(--table-cr-border);
-    }
-    /* Feature Table */
-    .table-feature {
-        background: var(--table-feature-bg);
-        border: 1.5px solid var(--table-feature-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
-    .table-feature th {
-        background: var(--table-feature-header);
-        color: #b47a00;
-        border-bottom: 2px solid var(--table-feature-border);
-    }
-    .table-feature td {
-        background: #fff;
-        border-color: var(--table-feature-border);
-    }
-    /* User Story Table */
-    .table-userstory {
-        background: var(--table-userstory-bg);
-        border: 1.5px solid var(--table-userstory-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 7px;
-        margin-bottom: 0.7rem;
-    }
-    .table-userstory th {
-        background: var(--table-userstory-header);
-        color: #b45c7c;
-        border-bottom: 2px solid var(--table-userstory-border);
-    }
-    .table-userstory td {
-        background: #fff;
-        border-color: var(--table-userstory-border);
-    }
-    /* Column width and text handling */
     .custom-titlewidth { max-width: 375px; min-width: 240px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-clientwidth { max-width: 170px; min-width: 100px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .custom-countwidth { max-width: 50px; min-width: 50px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-relatedwidth { width: 52px; min-width: 45px; text-align: center; }
     .expand-btn { cursor: pointer; font-weight: bold; width: 28px; min-width: 28px; text-align: center; }
     .badge-client { font-size: 0.6em; padding: 1px 3px; margin-right: 2px; margin-bottom: 1px; background-color:rgb(157, 158, 158); color: #fff; border-radius: 6px; font-weight: 400; letter-spacing: 0.01em; vertical-align: middle; display: inline-block; line-height: 1.2; }
@@ -167,55 +37,16 @@
     .filter-label {
         margin-right: 0.7rem;
     }
-    .filter-dropdown {
-        margin-right: 0.7rem;
-    }
+    
     .danger-focus:focus {
         border-color: #1565c0 !important;
         box-shadow: 0 0 0 0.2rem rgba(220,53,69,0.25) !important;
     }
-    /* Sticky headers for all levels */
-    thead th, .table-cr thead th, .table-feature thead th, .table-userstory thead th {
-        position: sticky;
-        z-index: 2;
+    .table th {
+        font-size: 0.7rem;
     }
-    .table-main thead th { top: 70px; }
-    .table-cr thead th { top: 104px; }
-    .table-feature thead th { top: 133px; }
-    .table-userstory thead th { top: 158px; }
-    
-    /*Vertical border for group separation */
-    .table-main th.sit-end,
-    .table-main td.sit-end {
-        border-right: 2.5px solid #aaa;
-    }
-    .table-main th.uat-end,
-    .table-main td.uat-end {
-        border-right: 2.5px solid #aaa;
-    }
-    .badge-gap {
-    background: #e3f0ff;
-    color: #1565c0;
-    border: 1px solid #bbdefb;
-    }
-
-    .badge-cr {
-        background: #ffe7e6;
-        color: #b71c1c;
-        border: 1px solid #ffcdd2;
-    }
-    .ddi-dash-header {
-        text-align: center;
-        font-size: 3rem;
-        font-weight: 800;
-        color: #2B3A44;
-        margin-top: 2.5rem;
-        margin-bottom: 1.2rem;
-        letter-spacing: 1.5px;
-        border-bottom: 4px solid #00EEAE;
-        display: inline-block;
-        padding-bottom: 0.4rem;
-        box-shadow: 0 6px 12px -10px #00EEAE;
+    .table td {
+        font-size: 0.9rem;
     }
 </style>
 </head>
@@ -256,38 +87,59 @@
         });
     }
 </script>
-<div class="ddi-dash-header">DDI Dashboard</div>
-<div>
-    <table class="table-main">
+    <!-- Heading row -->
+<ul class="nav nav-tabs d-print-none mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+            <b>DDI Dashboard</b>
+            <span class="badge bg-warning" style="color: black">
+                <i class="bi bi-clipboard-data"></i>
+            </span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'ddi_export_excel' %}" title="Export All Items to Excel">
+            <span class="badge bg-success" style="color: white">
+                <i class="bi bi-file-earmark-excel"></i>
+            </span>
+            <span style="color: black; font-weight: 250;">Export to Excel</span>
+        </a>
+    </li>
+</ul>
+<div class="text-center">
+    <h4>DDI Dashboard Dashboard</h4>
+</div>
+<div id="container" style="width:100%;" align="center">
+    <table style="text-align:center" class="table table-bordered table-striped table-hover table-sm">
         <thead>
-            <tr>
-                <th class="sit-end"; colspan="6"></th>
-                <th class="sit-end"; colspan="3">Delivery Support</th>
-                <th class="sit-end"; colspan="2"></th>
-                <th class="sit-end"; colspan="3">SIT</th>
-                <th class="uat-end"; colspan="3">UAT</th>
-                <th colspan="2"></th>
+            <tr style="font-weight: bold;" class="text-center">
+                <th scope="col" class="bg-info text-white">+/-</th>
+                <th title="# Related"scope="col" class="bg-info text-white custom-countwidth"># Related</th>
+                <th scope="col" class="bg-info text-white">ID</th>
+                <th scope="col" class="bg-info text-white">Deal</th>
+                <th scope="col" class="bg-info text-white">Client Account</th>
+                <th scope="col" class="bg-info text-white">Solution GTM</th>
+                <th scope="col" class="bg-success text-white"; colspan="3">Delivery Support</th>
+                <th scope="col" class="bg-danger text-white"; colspan="2">Start/Duration</th>
+                <th scope="col" class="bg-secondary text-white"; colspan="3">SIT</th>
+                <th scope="col" class="bg-primary text-white"; colspan="3">UAT</th>
+                <th scope="col" class="bg-warning text-white"; colspan="2">GoLive/Phase</th>
             </tr>
             <tr>
-                <th class="custom-relatedwidth">+/-</th>
-                <th class="custom-relatedwidth"># Related</th>
-                <th>ID</th>
-                <th class="custom-titlewidth">Deal</th>
-                <th class="custom-clientwidth">Client Account</th>
-                <th class="sit-end">Solution GTM</th>
-                <th>Leader</th>
-                <th>Senior Leader</th>
-                <th class="sit-end">Director</th>
-                <th>Start</th>
-                <th class="sit-end">Months</th>
-                <th>Start</th>
-                <th>End</th>
-                <th class="sit-end">% Cmpl</th>
-                <th>Start</th>
-                <th>End</th>
-                <th class="uat-end">% Cmpl</th>
-                <th>Go Live</th>
-                <th>Cur Phase</th>
+                <th class="table-info"; colspan ="6"></th>
+                <th class="table-success text-dark">Leader</th>
+                <th class="table-success text-dark">Senior Leader</th>
+                <th class="table-success text-dark">Director</th>
+                <th class="table-danger text-dark">Start</th>
+                <th class="table-danger text-dark">Months</th>
+                <th class="table-secondary text-dark">Start</th>
+                <th class="table-secondary text-dark">End</th>
+                <th class="table-secondary text-dark">% Cmpl</th>
+                <th class="table-primary text-dark">Start</th>
+                <th class="table-primary text-dark">End</th>
+                <th class="table-primary text-dark">% Cmpl</th>
+                <th class="table-warning text-dark">Go Live</th>
+                <th class="table-warning text-dark">Cur Phase</th>
             </tr>
         </thead>
         <tbody>
@@ -343,38 +195,38 @@
             </tr>
             {% if initiative.change_requests.all|length %}
             <tr id="changerequests-{{ initiative.id }}" class="hidden">
-                <td colspan="12" style="background: var(--table-cr-bg); padding: 0.75rem;">
-                    <div class="d-flex justify-content-left align-items-center mb-2 px-2 rounded"
-                        style="background-color: #f5f6fa; border: 1.5px solid #a6b2cc; box-shadow: var(--modern-shadow); font-size: 0.91rem; min-height: 28px;">
-                        <i class="bi bi-funnel-fill text-secondary mr-2" style="font-size:1.2em;"></i>
-                        <label for="stateFilter-{{ initiative.id }}" class="filter-label mb-0 mr-2 font-weight-bold" style="font-size:0.90em;">Filter by State:</label>
-                        <select id="stateFilter-{{ initiative.id }}" class="form-control form-control-sm w-auto danger-focus filter-dropdown" onchange="filterState({{ initiative.id }})" style="min-width: 110px; font-size:0.90em; height: 26px; padding: 1px 6px;">
+                <td colspan="12" style="padding: 0.75rem;">
+                    <div class="d-flex justify-content-left align-items-center mb-2 px-2 rounded" style="min-height: 28px;">
+                        <i class="bi bi-funnel-fill text-warning mr-2" style="font-size:1.2em;"></i>    
+                        <label for="stateFilter-{{ initiative.id }}" class="filter-label mb-0 mr-2 font-weight-bold" style="font-size:0.80em;">Filter by State:</label>
+                        <select id="stateFilter-{{ initiative.id }}" class="form-select" onchange="filterState({{ initiative.id }})" style="max-width: 200px; font-size:0.80em; height: 26px; padding: 1px 6px;">
                             <option value="">Show All Items</option>
                             <option value="Done">Hide Done Items</option>
                             <option value="In Progress">Show In Progress Items</option>
                             <option value="Proposed">Show Proposed Items</option>
                         </select>
-                        <span id="filtered-badge-{{ initiative.id }}" class="badge bg-warning text-dark ml-2" style="display:none; font-size:0.8em;">
+                        <span id="filtered-badge-{{ initiative.id }}" class="badge bg-warning text-dark ml-2" style="display:none; font-size:0.7em;">
                             Filtered
                         </span>
                     </div>
-                    <table class="table-cr">
-                        <thead>
-                            <tr>
-                                <th class="custom-relatedwidth">+/-</th>
-                                <th class="custom-relatedwidth"># Associated</th>
-                                <th>ID</th>
-                                <th>Type</th>
-                                <th class="custom-clientwidth">All Clients</th>
-                                <th class="custom-titlewidth">Title</th>
-                                <th>State</th>
-                                <th>Submitted</th>
-                                <th>Required By</th>
-                                <th>Target</th>
-                                <th>HL Estimate</th>
-                                <th>Contract ID #</th>
-                            </tr>
-                        </thead>
+                    <table style="text-align:center" class="table table-bordered table-striped table-hover table-sm">
+                        <tr style="font-weight: bold;">
+                            <th scope="col" class="bg-dark text-white"; colspan="12">Related CRs/GAPs</th>
+                        </tr>
+                        <tr style="font-weight: bold;" class="text-center">
+                            <th scope="col" class="table-info text-dark">+/-</th>
+                            <th title="# Associated"scope="col" class="table-info text-dark custom-countwidth"># Associated</th>
+                            <th scope="col" class="table-info text-dark">ID</th>
+                            <th scope="col" class="table-info text-dark">Type</th>
+                            <th scope="col" class="table-info text-dark">Client Accounts</th>
+                            <th scope="col" class="table-info text-dark">Title</th>
+                            <th scope="col" class="table-info text-dark">State</th>
+                            <th scope="col" class="table-success text-dark">Submitted</th>
+                            <th scope="col" class="table-success text-dark">Required By</th>
+                            <th scope="col" class="table-success text-dark">Target</th>
+                            <th scope="col" class="table-danger text-dark">HL Estimate</th>
+                            <th scope="col" class="table-secondary text-dark">Contract ID</th>
+                        </tr>
                         <tbody>
                             {% for change_request in initiative.change_requests.all|dictsort:'tt_workdescription' %}
                             <tr class="cr-row cr-row-{{ initiative.id }} state-{{ change_request.state|slugify }}">
@@ -463,23 +315,24 @@
                             </tr>
                             {% if change_request.features.all %}
                             <tr id="features-{{ initiative.id }}-{{ change_request.id }}" class="hidden">
-                                <td colspan="15" style="background: var(--table-feature-bg); padding: 0.5rem;">
-                                    <table class="table-feature">
-                                        <thead>
-                                            <tr>
-                                                <th class="custom-relatedwidth">+/-</th>
-                                                <th class="custom-relatedwidth"># Children</th>
-                                                <th>Contract ID</th>
-                                                <th>ID</th>
-                                                <th class="custom-titlewidth">Feature Title</th>
-                                                <th>State</th>
-                                                <th>Module</th>
-                                                <th>Start Date</th>
-                                                <th>Target Date</th>
-                                                <th>HL Estimate</th>
-                                                <th>Iteration Path</th>
-                                            </tr>
-                                        </thead>
+                                <td colspan="15" style="padding: 0.5rem;">
+                                    <table style="text-align:center" class="table table-bordered table-striped table-hover table-sm">
+                                        <tr style="font-weight: bold;">
+                                            <th scope="col" class="bg-dark text-white"; colspan="11">Assoicated Features</th>
+                                        </tr>
+                                        <tr style="font-weight: bold;" class="text-center">
+                                            <th scope="col" class="table-info text-dark">+/-</th>
+                                            <th title="# Associated"scope="col" class="table-info text-dark custom-countwidth"># Children</th>
+                                            <th scope="col" class="table-info text-dark">Contract ID</th>
+                                            <th scope="col" class="table-info text-dark">ID</th>
+                                            <th scope="col" class="table-info text-dark">Feature Title</th>
+                                            <th scope="col" class="table-info text-dark">State</th>
+                                            <th scope="col" class="table-success text-dark">Module</th>
+                                            <th scope="col" class="table-success text-dark">Start Date</th>
+                                            <th scope="col" class="table-success text-dark">Target Date</th>
+                                            <th scope="col" class="table-danger text-dark">HL Estimate</th>
+                                            <th scope="col" class="table-secondary text-dark">Iteration Path</th>
+                                        </tr>
                                         <tbody>
                                             {% for feature in change_request.features.all %}
                                             <tr>
@@ -530,21 +383,22 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-center"><span class="badge text-bg-light">{{ feature.highlevelestimate|floatformat:0  }}</span></td>
-                                                <td><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
+                                                <td><span class="badge text-bg-light">{{ feature.iterationpath|strip_tower }}</span></td>
                                             </tr>
                                             {% if feature.user_stories.all %}
                                             <tr id="userstories-{{ initiative.id }}-{{ change_request.id }}-{{ feature.id }}" class="hidden">
-                                                <td colspan="17" style="background: var(--table-userstory-bg); padding: 0.25rem;">
-                                                    <table class="table-userstory">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>ID</th>
-                                                                <th class="custom-titlewidth">User Story Title</th>
-                                                                <th>State</th>
-                                                                <th>Story Points</th>
-                                                                <th>Iteration Path</th>
-                                                            </tr>
-                                                        </thead>
+                                                <td colspan="17" style="padding: 0.25rem;">
+                                                    <table style="text-align:center" class="table table-bordered table-striped table-hover table-sm">
+                                                        <tr style="font-weight: bold;">
+                                                            <th scope="col" class="bg-dark text-white"; colspan="5">Children User Stories</th>
+                                                        </tr>
+                                                        <tr style="font-weight: bold;" class="text-center">
+                                                            <th scope="col" class="table-info text-dark">ID</th>
+                                                            <th scope="col" class="table-info text-dark">User Story Title</th>
+                                                            <th scope="col" class="table-info text-dark">State</th>
+                                                            <th scope="col" class="table-danger text-dark">Story Points</th>
+                                                            <th scope="col" class="table-secondary text-dark">Iteration Path</th>
+                                                        </tr>
                                                         <tbody>
                                                             {% for user_story in feature.user_stories.all %}
                                                             <tr>
@@ -570,7 +424,7 @@
                                                                     </span>
                                                                 </td>
                                                                 <td class="text-center"><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0  }}</span></td>
-                                                                <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
+                                                                <td><span class="badge text-bg-light">{{ user_story.iterationpath|strip_tower }}</span></td>
                                                             </tr>
                                                             {% endfor %}
                                                         </tbody>

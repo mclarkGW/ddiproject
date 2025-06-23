@@ -5,7 +5,9 @@ from .models import Initiative,ChangeRequest,LastRefreshed, Iteration, crChangeR
 from datetime import datetime, date
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+import openpyxl
+from openpyxl.styles import Font, PatternFill  
 import requests
 import base64
 import json
@@ -44,9 +46,102 @@ def dashboard_view(request):
         'initiatives': initiatives,
         'cr': cr,
         'last_refreshed': last_refreshed,
+        'active_tab': 'dashboard',
     }
 
     return render(request, 'dashboard.html', context)
+
+# DDI Export to Excel
+def export_ddi_dashboard(request):
+    initiatives = Initiative.objects.all().order_by('clientaccounts').prefetch_related(
+        'change_requests',
+        'change_requests__features',
+        'change_requests__features__user_stories'
+    )
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Initiatives"
+
+    # Header
+    headers = [
+        "Initiative ID", "Initiative Title", "Client Accounts", "Current Phase",
+        "CR/GAP ID", "CR/GAP Title", "CR/GAP State",
+        "Feature ID", "Feature Title", "Feature State",
+        "User Story ID", "User Story Title", "User Story State"
+    ]
+    ws.append(headers)
+
+    # Style header
+    header_fill = PatternFill(start_color='CFE2F3', end_color='CFE2F3', fill_type='solid')
+    header_font = Font(bold=True)
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+
+    # Set column widths
+    column_widths = [18, 30, 20, 18, 18, 30, 14, 14, 30, 14, 14, 30, 14]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+
+    row_num = 2
+    rows_to_hide = []
+    for initiative in initiatives:
+        ws.append([
+            initiative.id, initiative.title, initiative.clientaccounts, initiative.currentphase,
+            "", "", "",
+            "", "", "",
+            "", "", ""
+        ])
+        row_num += 1
+        for cr in initiative.change_requests.all():
+            ws.append([
+                "", "", "", "",
+                cr.id, cr.title, cr.state,
+                "", "", "",
+                "", "", ""
+            ])
+            ws.row_dimensions[row_num].outlineLevel = 1
+            rows_to_hide.append(row_num)  # Hide by default
+            row_num += 1
+            for feature in cr.features.all():
+                ws.append([
+                    "", "", "", "",
+                    "", "", "",
+                    feature.id, feature.title, feature.state,
+                    "", "", ""
+                ])
+                ws.row_dimensions[row_num].outlineLevel = 2
+                rows_to_hide.append(row_num)
+                row_num += 1
+                for us in feature.user_stories.all():
+                    ws.append([
+                        "", "", "", "",
+                        "", "", "",
+                        "", "", "",
+                        us.id, us.title, us.state
+                    ])
+                    ws.row_dimensions[row_num].outlineLevel = 3
+                    rows_to_hide.append(row_num)
+                    row_num += 1
+
+    # Hide all grouped rows, so only top-level (Initiatives) show
+    for rn in rows_to_hide:
+        ws.row_dimensions[rn].hidden = True
+
+    # Outline/summary settings
+    ws.sheet_properties.outlinePr.summaryBelow = True
+    ws.sheet_view.showOutlineSymbols = True
+
+    # Add filter to header row
+    ws.auto_filter.ref = "A1:M1"
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename=DDI_Dashboard_ALL_Items.xlsx'
+    wb.save(response)
+    return response
 
 # Iteration View
 def iteration_view(request):
@@ -340,6 +435,100 @@ def cr_dashboard_view(request):
     }
     return render(request, 'crdashboard.html', context)
 
+# CR Export to Excel
+def export_cr_dashboard(request):
+    # Query all change requests with features, user stories, and tasks
+    cr_qs = crChangeRequest.objects.all().order_by('clientaccounts').prefetch_related(
+        'features',
+        'features__user_stories',
+        'features__user_stories__tasks'
+    )
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Change Requests"
+
+    # Header
+    headers = [
+        "CR ID", "CR Title", "CR State", "CR Workdesc", "CR High Level Estimate", "CR Client Accounts",
+        "Feature ID", "Feature Title", "Feature State", "Feature Module",
+        "User Story ID", "User Story Title", "User Story State", "User Story Story Points",
+        "Task ID", "Task Title", "Task State", "Task Original Estimate", "Task Remaining Work", "Task Completed Work"
+    ]
+    ws.append(headers)
+
+    # Style header
+    header_fill = PatternFill(start_color='CFE2F3', end_color='CFE2F3', fill_type='solid')
+    header_font = Font(bold=True)
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+
+    # Set column widths (adjust as needed)
+    column_widths = [14, 30, 14, 18, 16, 20, 14, 30, 14, 16, 14, 30, 14, 10, 14, 30, 14, 10, 10, 10]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+
+    row_num = 2
+    rows_to_hide = []
+    for cr in cr_qs:
+        ws.append([
+            cr.id, cr.title, cr.state, cr.tt_workdescription, cr.highlevelestimate, cr.clientaccounts,
+            "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+        ])
+        row_num += 1
+        # Features
+        for feature in cr.features.all():
+            ws.append([
+                "", "", "", "", "", "",
+                feature.id, feature.title, feature.state, feature.tt_initiative,
+                "", "", "", "", "", "", "", "", "", ""
+            ])
+            ws.row_dimensions[row_num].outlineLevel = 1
+            rows_to_hide.append(row_num)
+            row_num += 1
+            # User Stories
+            for us in feature.user_stories.all():
+                ws.append([
+                    "", "", "", "", "", "",
+                    "", "", "", "",
+                    us.id, us.title, us.state, us.storypoints,
+                    "", "", "", "", "", ""
+                ])
+                ws.row_dimensions[row_num].outlineLevel = 2
+                rows_to_hide.append(row_num)
+                row_num += 1
+                # Tasks (optional: comment out if not needed)
+                for task in us.tasks.all():
+                    ws.append([
+                        "", "", "", "", "", "",
+                        "", "", "", "",
+                        "", "", "", "",
+                        task.id, getattr(task, "title", ""), getattr(task, "state", ""),
+                        getattr(task, "originalestimate", ""), getattr(task, "remainingwork", ""), getattr(task, "completedwork", "")
+                    ])
+                    ws.row_dimensions[row_num].outlineLevel = 3
+                    rows_to_hide.append(row_num)
+                    row_num += 1
+
+    # Hide all grouped rows, so only top-level CRs show
+    for rn in rows_to_hide:
+        ws.row_dimensions[rn].hidden = True
+
+    # Outline/summary settings
+    ws.sheet_properties.outlinePr.summaryBelow = True
+    ws.sheet_view.showOutlineSymbols = True
+
+    # Add filter to header row
+    ws.auto_filter.ref = "A1:T1"
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename=CR_Dashboard_ALL_Items.xlsx'
+    wb.save(response)
+    return response
+
 # CR Charts View
 def cr_charts_view(request):
     crs = crChangeRequest.objects.prefetch_related('features', 'features__user_stories')
@@ -623,6 +812,191 @@ def gap_dashboard_view(request):
         'active_tab': 'dashboard',
     }
     return render(request, 'gapdashboard.html', context)
+
+# GAP Export to Exceldef export_gap_dashboard(request):
+    gap_qs = gapChangeRequest.objects.all().prefetch_related(
+        'features',
+        'features__user_stories',
+        'features__user_stories__tasks'
+    )
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "GAPs"
+
+    # Header row
+    headers = [
+        "GAP ID", "GAP Title", "GAP State", "GAP Workdesc", "GAP High Level Estimate", "GAP Client Accounts",
+        "Feature ID", "Feature Title", "Feature State", "Feature Module",
+        "User Story ID", "User Story Title", "User Story State", "User Story Story Points",
+        "Task ID", "Task Title", "Task State", "Task Original Estimate", "Task Remaining Work", "Task Completed Work"
+    ]
+    ws.append(headers)
+
+    # Style header
+    header_fill = PatternFill(start_color='CFE2F3', end_color='CFE2F3', fill_type='solid')
+    header_font = Font(bold=True)
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+
+    # Set column widths (adjust as needed)
+    column_widths = [14, 30, 14, 18, 16, 20, 14, 30, 14, 16, 14, 30, 14, 10, 14, 30, 14, 10, 10, 10]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+
+    row_num = 2
+    rows_to_hide = []
+    for gap in gap_qs:
+        ws.append([
+            gap.id, gap.title, gap.state, getattr(gap, 'tt_workdescription', ""), getattr(gap, 'highlevelestimate', ""), getattr(gap, 'clientaccounts', ""),
+            "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+        ])
+        row_num += 1
+        # Features
+        for feature in gap.features.all():
+            ws.append([
+                "", "", "", "", "", "",
+                feature.id, feature.title, feature.state, getattr(feature, 'tt_initiative', ""),
+                "", "", "", "", "", "", "", "", "", ""
+            ])
+            ws.row_dimensions[row_num].outlineLevel = 1
+            rows_to_hide.append(row_num)
+            row_num += 1
+            # User Stories
+            for us in feature.user_stories.all():
+                ws.append([
+                    "", "", "", "", "", "",
+                    "", "", "", "",
+                    us.id, us.title, us.state, getattr(us, "storypoints", ""),
+                    "", "", "", "", "", ""
+                ])
+                ws.row_dimensions[row_num].outlineLevel = 2
+                rows_to_hide.append(row_num)
+                row_num += 1
+                # Tasks (optional)
+                for task in us.tasks.all():
+                    ws.append([
+                        "", "", "", "", "", "",
+                        "", "", "", "",
+                        "", "", "", "",
+                        task.id, getattr(task, "title", ""), getattr(task, "state", ""),
+                        getattr(task, "originalestimate", ""), getattr(task, "remainingwork", ""), getattr(task, "completedwork", "")
+                    ])
+                    ws.row_dimensions[row_num].outlineLevel = 3
+                    rows_to_hide.append(row_num)
+                    row_num += 1
+
+    # Hide all grouped rows, so only top-level GAPs show
+    for rn in rows_to_hide:
+        ws.row_dimensions[rn].hidden = True
+
+    # Outline/summary settings
+    ws.sheet_properties.outlinePr.summaryBelow = True
+    ws.sheet_view.showOutlineSymbols = True
+
+    # Add filter to header row
+    ws.auto_filter.ref = "A1:T1"
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename=GAP_Dashboard_ALL_Items.xlsx'
+    wb.save(response)
+    return response
+
+# GAP Export to Excel
+def export_gap_dashboard(request):
+    gap_qs = gapChangeRequest.objects.all().order_by('clientaccounts').prefetch_related(
+        'features',
+        'features__user_stories',
+        'features__user_stories__tasks'
+    )
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "GAPs"
+
+    # Header row
+    headers = [
+        "GAP ID", "GAP Title", "GAP State", "GAP Workdesc", "GAP High Level Estimate", "GAP Client Accounts",
+        "Feature ID", "Feature Title", "Feature State", "Feature Module",
+        "User Story ID", "User Story Title", "User Story State", "User Story Story Points",
+        "Task ID", "Task Title", "Task State", "Task Original Estimate", "Task Remaining Work", "Task Completed Work"
+    ]
+    ws.append(headers)
+
+    # Style header
+    header_fill = PatternFill(start_color='CFE2F3', end_color='CFE2F3', fill_type='solid')
+    header_font = Font(bold=True)
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+
+    # Set column widths (adjust as needed)
+    column_widths = [14, 30, 14, 18, 16, 20, 14, 30, 14, 16, 14, 30, 14, 10, 14, 30, 14, 10, 10, 10]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+
+    row_num = 2
+    rows_to_hide = []
+    for gap in gap_qs:
+        ws.append([
+            gap.id, gap.title, gap.state, getattr(gap, 'tt_workdescription', ""), getattr(gap, 'highlevelestimate', ""), getattr(gap, 'clientaccounts', ""),
+            "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+        ])
+        row_num += 1
+        # Features
+        for feature in gap.features.all():
+            ws.append([
+                "", "", "", "", "", "",
+                feature.id, feature.title, feature.state, getattr(feature, 'tt_initiative', ""),
+                "", "", "", "", "", "", "", "", "", ""
+            ])
+            ws.row_dimensions[row_num].outlineLevel = 1
+            rows_to_hide.append(row_num)
+            row_num += 1
+            # User Stories
+            for us in feature.user_stories.all():
+                ws.append([
+                    "", "", "", "", "", "",
+                    "", "", "", "",
+                    us.id, us.title, us.state, getattr(us, "storypoints", ""),
+                    "", "", "", "", "", ""
+                ])
+                ws.row_dimensions[row_num].outlineLevel = 2
+                rows_to_hide.append(row_num)
+                row_num += 1
+                # Tasks (optional)
+                for task in us.tasks.all():
+                    ws.append([
+                        "", "", "", "", "", "",
+                        "", "", "", "",
+                        "", "", "", "",
+                        task.id, getattr(task, "title", ""), getattr(task, "state", ""),
+                        getattr(task, "originalestimate", ""), getattr(task, "remainingwork", ""), getattr(task, "completedwork", "")
+                    ])
+                    ws.row_dimensions[row_num].outlineLevel = 3
+                    rows_to_hide.append(row_num)
+                    row_num += 1
+
+    # Hide all grouped rows, so only top-level GAPs show
+    for rn in rows_to_hide:
+        ws.row_dimensions[rn].hidden = True
+
+    # Outline/summary settings
+    ws.sheet_properties.outlinePr.summaryBelow = True
+    ws.sheet_view.showOutlineSymbols = True
+
+    # Add filter to header row
+    ws.auto_filter.ref = "A1:T1"
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = 'attachment; filename=GAP_Dashboard_ALL_Items.xlsx'
+    wb.save(response)
+    return response
 
 # GAP Charts View
 def gap_charts_view(request):

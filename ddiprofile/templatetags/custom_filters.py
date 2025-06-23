@@ -20,6 +20,12 @@ def split(value, delimiter=';'):
     return []
 
 @register.filter
+def strip_tower(value):
+    if value and '\\' in value:
+        return '\\'.join(value.split('\\')[1:])
+    return value
+
+@register.filter
 def is_warning(change_request):
     """
     Checks if the requiredbydate is not null, targetdate is null, 

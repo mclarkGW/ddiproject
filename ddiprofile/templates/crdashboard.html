@@ -12,142 +12,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 
 <style>
-    :root {
-        --table-main-bg: #eafaf4;
-        --table-main-border: #17a2b8;
-        --table-main-header: #d1f1e7;
-        --table-cr-bg: #faeae9;
-        --table-cr-border: #d47c7c;
-        --table-cr-header: #f5dcdc;
-        --table-feature-bg: #f5f6fa;
-        --table-feature-border: #a6b2cc;
-        --table-feature-header: #e7eaf6;
-        --table-userstory-bg: #fff8e6;
-        --table-userstory-border: #e3b04b;
-        --table-userstory-header: #fff3d6;
-        --table-task-bg: #fff2ee;          /* light red for tasks */
-        --table-task-border: #e57373;      /* soft red for border */
-        --table-task-header: #ffe5e0;      /* even lighter red for header */
-        --modern-shadow: 0 2px 12px 0 rgba(0,0,0,0.08);
-    }
-    .table-main th,
-    .table-cr th,
-    .table-feature th,
-    .table-userstory th {
-        font-size: 0.68em;
-        height: 20px;
-        line-height: 1.1;
-        padding: 2.5px 3px;
-        text-align: center;
-        vertical-align: middle;
-        font-weight: 600;
-        letter-spacing: 0.01em;
-        white-space: nowrap;
-        border-radius: 0 !important;
-        background-image: none !important;
-        box-shadow: none !important;
-        border: 1px solid #b7e4c7;
-    }
-    .table-main th, .table-main td,
-    .table-cr th, .table-cr td,
-    .table-feature th, .table-feature td,
-    .table-userstory th, .table-userstory td {
-        border: 1px solid #b7e4c7;
-    }
-    .table-cr th, .table-cr td {
-        border-color: var(--table-cr-border);
-    }
-    .table-feature th, .table-feature td {
-        border-color: var(--table-feature-border);
-    }
-    .table-userstory th, .table-userstory td {
-        border-color: var(--table-userstory-border);
-    }
-    .table-main {
-        background: var(--table-main-bg);
-        border: 1.5px solid var(--table-main-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
-    .table-main th {
-        background: var(--table-main-header);
-        color: #10898b;
-        border-bottom: 2px solid var(--table-main-border);
-    }
-    .table-main thead tr:first-child th {
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
-    }
-    .table-main td {
-        background: #fff;
-        border-color: var(--table-main-border);
-    }
-    .table-cr {
-        background: var(--table-cr-bg);
-        border: 1.5px solid var(--table-cr-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 9px;
-        margin-bottom: 1.2rem;
-    }
-    .table-cr th {
-        background: var(--table-cr-header);
-        color: #b45c7c;
-        border-bottom: 2px solid var(--table-cr-border);
-    }
-    .table-cr td {
-        background: #fff;
-        border-color: var(--table-cr-border);
-    }
-    .table-feature {
-        background: var(--table-feature-bg);
-        border: 1.5px solid var(--table-feature-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
-    .table-feature th {
-        background: var(--table-feature-header);
-        color: #4169a6;
-        border-bottom: 2px solid var(--table-feature-border);
-    }
-    .table-feature td {
-        background: #fff;
-        border-color: var(--table-feature-border);
-    }
-    .table-userstory {
-        background: var(--table-userstory-bg);
-        border: 1.5px solid var(--table-userstory-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 7px;
-        margin-bottom: 0.7rem;
-    }
-    .table-userstory th {
-        background: var(--table-userstory-header);
-        color: #b47a00;
-        border-bottom: 2px solid var(--table-userstory-border);
-    }
-    .table-userstory td {
-        background: #fff;
-        border-color: var(--table-userstory-border);
-    }
-    .table-task {
-        background: var(--table-task-bg);
-        border: 1.5px solid var(--table-task-border);
-        box-shadow: var(--modern-shadow);
-        border-radius: 7px;
-        margin-bottom: 0.7rem;
-        width: 100%;
-    }
-    .table-task th {
-        background: var(--table-task-header);
-        color: #b71c1c;
-        border-bottom: 2px solid var(--table-task-border);
-    }
-    .table-task td {
-        background: #fff;
-        border-color: var(--table-task-border);
-    }
     .custom-titlewidth { max-width: 375px; min-width: 240px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-clientwidth { max-width: 170px; min-width: 100px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .custom-relatedwidth { width: 52px; min-width: 45px; text-align: center; }
@@ -179,166 +43,6 @@
         z-index: 1000;
         opacity: 1;
         transition: opacity 0.3s;
-    }
-    thead th, .table-cr thead th, .table-feature thead th, .table-userstory thead th {
-        position: sticky;
-        z-index: 2;
-    }
-    .table-main thead th { top: 70px; }
-    .table-cr thead th { top: 104px; }
-    .table-feature thead th { top: 133px; }
-    .table-userstory thead th { top: 158px; }
-    .table-main th.col-end,
-    .table-main td.col-end {
-        border-right: 2.5px solid #aaa;
-    }
-    .cr-dash-header {
-        text-align: center;
-        font-size: 3rem;
-        font-weight: 800;
-        color: #29343b;
-        margin-top: 2.5rem;
-        margin-bottom: 1.2rem;
-        letter-spacing: 1.5px;
-        border-bottom: 4px solid #1dc7b2;
-        display: inline-block;
-        padding-bottom: 0.4rem;
-        box-shadow: 0 6px 12px -10px #1dc7b2;
-    }
-    .cr-dash-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-        margin-left: 0.5rem;
-    }
-    .cr-dash-btn {
-        padding: 7px 19px;
-        font-size: 1em;
-        background: #17a2b8;
-        color: white;
-        border: none;
-        border-radius: 7px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 2px 8px 0 rgba(23,162,184,0.11);
-        transition: background 0.15s;
-        text-decoration: none;
-        min-width: 68px;
-    }
-    .cr-dash-btn:hover {
-        background: #138496;
-        color: #fff;
-    }
-    .cr-dash-filter-label {
-        font-weight: 700;
-        color: #106e6e;
-        font-size: 0.97em;
-    }
-    .cr-dash-filter-dropdown {
-        min-width: 110px;
-        font-size: 0.96em;
-        padding: 3px 7px;
-        border-radius: 4px;
-        border: 1px solid #17a2b8;
-        background: #fff;
-        color: #29343b;
-        margin-top: 2px;
-        margin-bottom: 0;
-        height: 2em;
-        max-width: 145px;
-    }
-    .cr-dash-filter-dropdown:focus {
-        border-color: #138496;
-        outline: none;
-    }
-    .cr-dash-filter-dropdown[multiple] {
-        height: 120px;
-        min-width: 110px;
-        max-width: 145px;
-    }
-    .cr-dash-filter-area-two-col {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: #eafaf4;
-        border: 1.5px solid #17a2b8;
-        border-radius: 8px;
-        padding: 0.7rem 0.7rem 0.7rem 0.7rem;
-        margin-bottom: 1.2rem;
-        width: 100%;
-        margin-left: auto;
-        margin-right: auto;
-        font-size: 0.93em;
-        box-sizing: border-box;
-    }
-    .cr-dash-filter-form {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-    }
-    .cr-dash-filter-cols {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: flex-end; /* pin badge to bottom */
-        gap: 1.5rem;
-        width: 100%;
-    }
-    .cr-dash-filter-col {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-        min-width: 165px;
-        height: 170px;
-        font-size: 0.97em;
-    }
-    .cr-dash-filter-label-row {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.22rem;
-        font-size: 0.95em;
-    }
-    .cr-dash-filter-badge-row {
-        margin-top: 0.4rem;
-        display: flex;
-        justify-content: center;
-        width: 100%;
-        font-size: 0.88em;
-    }
-    .cr-dash-filter-buttons {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 30px;
-        gap: 15px;
-    }
-    .filter-toggle-btn {
-        background: #fff;
-        color: #17a2b8;
-        border: 2px solid #17a2b8;
-        border-radius: 50%;
-        padding: 10px 14px;
-        font-size: 1.4em;
-        box-shadow: 0 2px 6px 0 rgba(23,162,184,0.13);
-        transition: background 0.18s, color 0.18s, border 0.18s;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        outline: none;
-    }
-    .filter-toggle-btn:hover, .filter-toggle-btn:focus {
-        background: #17a2b8;
-        color: #fff;
-        border: 2px solid #10898b;
-        cursor: pointer;
     }
     .table th {
         font-size: 0.7rem;
@@ -373,28 +77,6 @@
             expandBtn.innerHTML = '+';
         }
     }
-    document.addEventListener('DOMContentLoaded', function() {
-        const btn = document.getElementById('toggle-filter-btn');
-        const filterDiv = document.getElementById('filter-container');
-        let visible = true;
-        function updateBtn() {
-            if (visible) {
-                btn.title = "Hide Filters";
-                btn.setAttribute("aria-label", "Hide Filters");
-                btn.innerHTML = '<i class="bi bi-funnel"></i> <span class="btn-title">Hide Filter</span>';
-            } else {
-                btn.title = "Show Filters";
-                btn.setAttribute("aria-label", "Show Filters");
-                btn.innerHTML = '<i class="bi bi-funnel"></i> <span class="btn-title">Show Filter</span>';
-            }
-        }
-        btn.addEventListener('click', function() {
-            visible = !visible;
-            filterDiv.style.display = visible ? 'block' : 'none';
-            updateBtn();
-        });
-        updateBtn();
-    });
 </script>
     <!-- Heading row -->
 <ul class="nav nav-tabs d-print-none mb-3">
@@ -412,6 +94,14 @@
                 <i class="bi bi-bar-chart"></i>
             </span>
             <span style="color: #007bff; font-weight: 250;">CR Charts</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'cr_export_excel' %}" title="Export All Items to Excel">
+            <span class="badge bg-success" style="color: white">
+                <i class="bi bi-file-earmark-excel"></i>
+            </span>
+            <span style="color: black; font-weight: 250;">Export to Excel</span>
         </a>
     </li>
 </ul>
@@ -738,7 +428,7 @@
                                 <td><span class="badge text-bg-light">{{ feature.tt_initiative }}</span></td>
                                 <td><span class="badge text-bg-light">{{ feature.startdate|date:"m/d/y"|default:"" }}</span></td>
                                 <td><span class="badge text-bg-light">{{ feature.targetdate|date:"m/d/y"|default:"" }}</span></td>
-                                <td><span class="badge text-bg-light">{{ feature.iterationpath }}</span></td>
+                                <td><span class="badge text-bg-light">{{ feature.iterationpath|strip_tower }}</span></td>
                             </tr>
                             {% if feature.user_stories.all %}
                             <tr id="userstories-{{ cr.id }}-{{ feature.id }}" class="hidden">
@@ -788,7 +478,7 @@
                                                 ">{{ user_story.state }}</span>
                                             </td>
                                             <td class="text-center"><span class="badge text-bg-light">{{ user_story.storypoints|floatformat:0 }}</span></td>
-                                            <td><span class="badge text-bg-light">{{ user_story.iterationpath }}</span></td>
+                                            <td><span class="badge text-bg-light">{{ user_story.iterationpath|strip_tower }}</span></td>
                                         </tr>
                                         {% if user_story.tasks.all %}
                                         <tr id="tasks-{{ feature.id }}-{{ user_story.id }}" class="hidden">
